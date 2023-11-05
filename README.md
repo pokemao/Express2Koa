@@ -957,14 +957,27 @@ app.listen('3124', () => {
     await对标的是generate里面的yeild
     在一个generate函数执行遇到yeild的时候会干什么？
     这个generator函数会返回，返回值是什么，是yeild后面跟的值
-    那对于await来说呢，当一个函数执行到await的时候await也会返回，返回值是await后面跟的值，这里有个小问题，一会儿补充上
+    那对于await来说呢，当一个函数执行到await的时候await也会返回，返回值和yeild是不同的，await永远会放回一个pending状态的Promise，这么说可能不太好理解，我们把await会返回的东西写一下
+    ```js
+    async middleware3(ctx, next) => {
+        console.log(5);
+
+        // dispatch(3)返回就是next()返回了
+        return Promise.resoled() /** 这个是要返回的东西 */.then(res => {
+          console.log(6);
+          return "third"
+        }
+    }
+    ```
+    上面这段代码中由于.then中的回调函数还没有被执行(因为Promise.resoled()虽然是fulfill的，会把.then中的回调函数放入到微任务队列中，但是这个回调函数还没有被执行)，由于.then中的回调函数还没有被执行，所以.then创建的Promise是pending状态的。这里有个小问题，如果next函数返回的不是promise对象怎么办？一会儿我们解答
     那什么时候generate函数继续执行呢？在generate函数的generator调用next的时候继续执行，然后把next里面传入的值传递到generate里面去(比如 const res = yeild 1，next中传入的值会被res接受)
-    那么await什么时候把值传回来呢？在await后面的Promise变成fulfilled之后并且这个fulfilled的Promise在微任务队列里面被执行的时候，作为await之后的代码就继续执行了(比如 const res = await Promise.resolve(1)，当Promise.resolve(1)在微任务队列中就绪的时候，1就会给到res，然后代码继续执行)
+    那么await什么时候把值传回来让middleware3继续执行呢？在await后面直接跟随的Promise(在这里就是dispatch(3)返回的Promise.resolve())变成fulfilled之后并且这个fulfilled的Promise在微任务队列里面被执行的时候，作为await之后的代码就继续执行了(比如 const res = await Promise.resolve(1)，当Promise.resolve(1)在微任务队列中就绪的时候，1就会给到res，然后代码继续执行)
     这里就引出了一个问题，也是刚刚想说的小问题如果await后面跟的不是Promise不就不能使用上面的规范了嘛？
     没关系，await会判断后面的值是否是Promise，如果不是就使用Promise.resolve()包装一下
     前面做了这么多解释，接下来就要继续执行代码了
-    await会直接让middleware3这个函数返回，返回值是Promise.resolve()，这是一个fulfilled状态的Promise
-    await返回的同时，由于有一个fulfilled状态的Promise产生了，微任务队列会加上一个微任务(mircoTasks:\[middleware3继续从await返回执行\])，并且在执行微任务的时候会导致返回到middleware3继续执行
+    await会直接让middleware3这个函数返回，返回值是一个pending的Promise，就是我们刚刚说的.then创建的promise
+    在await返回的同时，由于有一个fulfilled状态的Promise产生了————就是next()同时也是dispatch(3)返回的Promise.resolve()，微任务队列会加上一个微任务(mircoTasks:\[middleware3继续从await返回执行\])，并且在执行微任务的时候会导致返回到middleware3继续执行
+    注意区分：middleware3通过await返回的是一个.then创建的pending状态的Promise对象，由于Promise.resolve()的执行，会向微任务队列中添加.then里面的回调函数，是这样的一个关系。把await后面的代码改造成一个.then，然后把这个.then函数创建的Promise返回，这些都是await这个关键字的作用；然而把.then里面的回调放入微任务队列的原因是Promise.resolve()是一个fulfilled状态的promise
     middleware3返回会返回到哪个函数呢？就是middleware3这个函数在函数调用栈中的上一个函数是什么？那个函数嗲用的middleware3这个函数？
     是fn(ctx, dipatch.bind(null, 2))
     ```js
@@ -989,13 +1002,13 @@ app.listen('3124', () => {
       }
     }
     ```
-    fn(context, dispatch.bind(null, i + 1))返回，返回值就是刚刚说的middleware3内部执行到await时的返回值Promise.resolve()
-    然后dispatch(2)就要返回了，返回值是Promise.resolve(Promise.resolve()), 由于Promise.resolve()具有幂等性，所以相当于是返回了Promise.resolve()
+    fn(context, dispatch.bind(null, i + 1))返回，返回值就是刚刚说的middleware3内部执行到await时的返回值，一个pending状态的Promise
+    然后dispatch(2)就要返回了，返回值是Promise.resolve(<pending> Promise), 由于Promise.resolve()具有幂等性，所以相当于是返回了<pending> Promise
     这里不需要向微任务队列中添加微任务，原因是这个Promise.resolve(fn(context, dispatch.bind(null, i + 1)))没有调用.then并且在前面也没有await
     这里补充一下，加入微任务队列的不是Promise对象，而是Promise对象后面的.then的任务，当一个Promise就绪的时候会把.then里面的任务加入到微任务队列中
     注：有的时候会把一个Promise的执行过程加入到微任务队列中，这个是V8做的事情，有一道经典的面试题是这个过程
-    dispatch(2)要返回Promise.resolve("second")到哪里呢？其实就是在问哪里调用的dispatch(2)？
-    是在我们的中间件middleware2中，调用next()的时候调用的dispatch(2)，所以要把Promise.resolve()作为middleware2中next()的返回值
+    dispatch(2)要返回<pending> Promise到哪里呢？其实就是在问哪里调用的dispatch(2)？
+    是在我们的中间件middleware2中，调用next()的时候调用的dispatch(2)，所以要把<pending> Promise作为middleware2中next()的返回值
     ```js
     async middleware2(ctx, next) => {
         // next 就是 dispatch.bind(null, 2)
@@ -1018,7 +1031,7 @@ app.listen('3124', () => {
         console.log(3);
 
         // next()等于是执行dispatch.bind(null, 2)()
-        Promise.resolve()/** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */.then(res => {
+        "<pending> Promise"/** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */.then(res => {
             console.log(res);
         });
         console.log(4);
@@ -1027,7 +1040,7 @@ app.listen('3124', () => {
     ```
     这里调用了.then，会发生什么？
     就像我们前面说的，调用了.then，就会等调用.then的那个Promise在状态变成fulfilled的时候把.then中的回调函数加入到微任务队列中
-    由于Promise.resolve()就是fulfilled状态的，所以微任务队列会加上一个微任务(mircoTasks:\[middleware3继续从await返回执行， 执行middleware2中then里面的内容\])，并且在执行微任务的时候会导致返回到middleware2继续执行
+    由于<pending> Promise不是fulfilled状态的，所以微任务队列不会加微任务
     然后就继续执行middleware2的next()之后的内容了
     打印4，返回"second"这个字符串，注意这里返回的是字符串
     但是这是个async函数，async函数在返回返回值的时候会做和await相同的处理，会把不是Promise的返回值包装一下！！！！！所以这里真实的返回值是Promise.resolve("second")
@@ -1071,7 +1084,7 @@ app.listen('3124', () => {
     fn(context, dispatch.bind(null, i + 1))要返回了，返回值就是刚刚说的middleware2的返回值(注意这里不是通过await返回的，是middleware2通过return返回的)Promise.resolve("second")
     然后dispatch(1)就要返回了，返回值是Promise.resolve(Promise.resolve("second")), 由于Promise.resolve()具有幂等性，所以相当于是返回了Promise.resolve("second")
     这里不需要向微任务队列中添加微任务，原因是这个Promise.resolve(fn(context, dispatch.bind(null, i + 1)))没有调用.then并且在前面也没有await
-    dispatch(1)要返回Promise.resolve()到哪里呢？其实就是在问哪里调用的dispatch(1)？
+    dispatch(1)要返回Promise.resolve("second")到哪里呢？其实就是在问哪里调用的dispatch(1)？
     是在我们的中间件middleware1中，调用next()的时候调用的dispatch(1)，所以要把Promise.resolve("second")作为middleware1中next()的返回值
     ```js
     async middleware1(ctx, next) => {
@@ -1098,8 +1111,21 @@ app.listen('3124', () => {
         console.log(2);
     }
     ```
-    await会直接让middleware1这个函数返回，返回值是Promise.resolve("second")❓❓❓❓❓，这是一个fulfilled状态的Promise
-    await返回的同时，由于有一个fulfilled状态的Promise产生了，微任务队列会加上一个微任务(mircoTasks:\[middleware3继续从await返回执行， 执行middleware2中then里面的内容，middleware1继续从await返回执行\])，并且在执行微任务的时候会导致返回到middleware1继续执行
+    await会直接让middleware1这个函数返回，返回值又是一个由.then创建的pending状态的Promise，什么样子呢？我们再写一下
+    ```js
+    async middleware1(ctx, next) => {
+        // next 就是 dispatch.bind(null, 1)
+
+        console.log(1);
+
+        // next()等于是执行dispatch.bind(null, 1)()
+        return Promise.resolve("second") /** 这后面就是要返回的Promise对象 */.then(a => {
+          console.log(a);
+          console.log(2)
+        })
+    }
+    ```
+    await返回这个pending的Promise的同时，由于有一个fulfilled状态的Promise产生了，微任务队列会加上一个微任务(mircoTasks:\[middleware3继续从await返回执行，middleware1继续从await返回执行\])，并且在执行微任务的时候会导致返回到middleware1的上下文中继续执行
     然后middleware1就要返回了，middleware1返回会返回到哪个函数呢？就是middleware1这个函数在函数调用栈中的上一个函数是什么？那个函数调用的middleware1这个函数？
     是dispatch(0)
     ```js
@@ -1123,10 +1149,10 @@ app.listen('3124', () => {
       }
     }
     ```
-    fn(context, dispatch.bind(null, i + 1))要返回了，返回值就是刚刚说的middleware1的返回值(注意这里不是通过await返回的，是middleware1通过return返回的)Promise.resolve("second")
-    然后dispatch(1)就要返回了，返回值是Promise.resolve(Promise.resolve("second")), 由于Promise.resolve()具有幂等性，所以相当于是返回了Promise.resolve("second")
+    fn(context, dispatch.bind(null, i + 1))要返回了，返回值就是刚刚说的middleware1的返回值(注意这里不是通过await返回的，是middleware1通过return返回的)<pending> Promise
+    然后dispatch(1)就要返回了，返回值是Promise.resolve(<pending> Promise), 由于Promise.resolve()具有幂等性，所以相当于是返回了<pending> Promise
     这里不需要向微任务队列中添加微任务，原因是这个Promise.resolve(fn(context, dispatch.bind(null, i + 1)))没有调用.then并且在前面也没有await
-    dispatch(0)要返回Promise.resolve("second")到哪里呢？其实就是在问哪里调用的dispatch(0)？
+    dispatch(0)要返回<pending> Promise到哪里呢？其实就是在问哪里调用的dispatch(0)？
     是在koa的fnMiddleware函数，终于出来了，fnMiddleware这个函数是什么来着？
     ```js
     function fnMiddleware(context, next) {
@@ -1150,7 +1176,7 @@ app.listen('3124', () => {
       }
     }
     ```
-    fnMiddleware直接返回了dispatch(0)，所以fnMiddleware的返回值是Promise.resolve("second")
+    fnMiddleware直接返回了dispatch(0)，所以fnMiddleware的返回值是<pending> Promise
     函数fnMiddleware会返回到哪里呢？是handleRequest
     ```js
     handleRequest(ctx, fnMiddleware) {
@@ -1165,7 +1191,7 @@ app.listen('3124', () => {
     ```
     这里调用了.then，会发生什么？
     就像我们前面说的，调用了.then，就会等调用.then的那个Promise在状态变成fulfilled的时候把.then中的回调函数加入到微任务队列中
-    由于Promise.resolve("second")就是fulfilled状态的，所以微任务队列会加上一个微任务(mircoTasks:\[middleware3继续从await返回执行， 执行middleware2中then里面的内容，middleware1继续从await返回执行, 执行handleRequest函数中的handleResponse函数\])，并且在执行微任务的时候会导致返回到handleRequest函数继续执行
+    由于fnMiddleware返回的<pending> Promise就不是fulfilled状态的，所以微任务队列会不加上微任务
     然后handleRequest也要返回了，返回什么呢？
     这是就要说到.then()会返回什么的问题了
     .then()的返回值是.then里面函数的返回值，如果.then里面的函数返回的不是Promise，同样会用Promise.resolve()包裹一下，在返回出来
@@ -1194,6 +1220,126 @@ app.listen('3124', () => {
     ```
     这里就是node的http模块在接受到一个请求之后，执行执行handleRequest = (req, res) => {}回调函数的地方了
     然后node就会发现时间循环中handleRequest = (req, res) => {}这个回调函数已经执行完毕了，该去执行微任务队列中的内容了
+    微任务队列现在是什么样子的呢？mircoTasks:\[middleware3继续从await返回执行，middleware1继续从await返回执行\]
+    所以会先回到middleware3，从middleware3的await后面继续执行，其实就是执行await创建的.then中的回调函数
+    ```js
+    async middleware3(ctx, next) => {
+        console.log(5);
+
+        // dispatch(3)返回就是next()返回了
+        await Promise.resoled(); 
+        /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */
+        console.log(6);
+        return "third"
+    }
+    async middleware3(ctx, next) => {
+        console.log(5);
+
+        // dispatch(3)返回就是next()返回了
+        return Promise.resoled().then(res => {
+           /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */
+          console.log(6);
+          return "third"
+        })
+    }
+    ```
+    之后就是打印6，然后返回"third"。.then里面的函数会把不是Promise的返回值包装用Promise.resolve()一下，然后返回。
+    当.then里面的函数返回"third"的时候，这个时候就会到这这个.then创建的Promise的状态从pending转变成fulfilled了！！！
+    大家还记得这个.then创建的promise在哪里被调用.then了吗？是在middleware2中，下面是middleware2
+    ```js
+    async middleware2(ctx, next) => {
+        // next 就是 dispatch.bind(null, 2)
+
+        console.log(3);
+
+        // next()等于是执行dispatch.bind(null, 2)()
+        "<pending> Promise".then(res => {
+            console.log(res);
+        });
+        console.log(4);
+        return "second"
+    }
+    ```
+    由于这个<pending> Promise变成了<fulfilled> Promise了，我们也通过一些改写，让这个函数现在的内部上下文变得更显清晰
+    ```js
+    async middleware2(ctx, next) => {
+        // next 就是 dispatch.bind(null, 2)
+
+        console.log(3);
+
+        // next()等于是执行dispatch.bind(null, 2)()
+        Promise.resolve("third").then(res => {
+            console.log(res);
+        });
+        console.log(4);
+        return "second"
+    }
+    ```
+    所以这个Promise.resolve("third")后面的.then里面的回调就会被加入到微任务队列中，这时微任务队列会加入一个新任务 mircoTasks:\[middleware1继续从await返回执行，middleware2中的.then中的回调函数\]
+    之后继续执行微任务队列中的下一个微任务，就是继续执行middleware1
+    这里要解释一下：middleware2中的`"<pending> Promise".then(res => {console.log(res);});`的后面没有再调用.then，所以不用再关注这个`"<pending> Promise".then`的状态变化了
+    ```js
+    async middleware1(ctx, next) => {
+        // next 就是 dispatch.bind(null, 1)
+
+        console.log(1);
+
+        // next()等于是执行dispatch.bind(null, 1)()
+        const a /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */ = await Promise.resolve("second");
+        console.log(a);
+        console.log(2);
+    }
+    async middleware1(ctx, next) => {
+        // next 就是 dispatch.bind(null, 1)
+
+        console.log(1);
+
+        // next()等于是执行dispatch.bind(null, 1)()
+        return Promise.resolve("second").then(a => {
+          /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */
+          console.log(a);
+          console.log(2)
+        })
+    }
+    ```
+    之后就是打印"second"，然后再打印2
+    这时还是由于这个<pending> Promise变成了<fulfilled> Promise了，所以这个Promise后面的.then里面的回调就会被加入到微任务队列中，这时微任务队列会加入一个新任务 mircoTasks:\[middleware2中的.then中的回调函数，执行handleRequest函数中的handleResponse函数\]，在执行微任务的时候会导致返回到handleRequest函数上下文中继续执行
+    之后继续执行微任务队列中的下一个微任务，就是继续执行middleware2
+    ```js
+    async middleware2(ctx, next) => {
+        // next 就是 dispatch.bind(null, 2)
+
+        console.log(3);
+
+        // next()等于是执行dispatch.bind(null, 2)()
+        Promise.resolve("third").then(res => {
+            /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */
+            console.log(res);
+        });
+        console.log(4);
+        return "second"
+    }
+    ```
+    继续打印"third",
+    之后继续执行微任务队列中的下一个微任务，就是继续执行handleRequest函数
+    ```js
+    handleRequest(ctx, fnMiddleware) {
+      const res = ctx.res;
+      res.statusCode = 404;
+      const onerror = (err) => ctx.onerror(err);
+      const handleResponse = () => respond(ctx);
+      console.log(ctx.onerror);
+      onFinished(res, onerror);
+      return fnMiddleware(ctx).then( /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */ handleResponse).catch(onerror);
+    }
+    ```
+    看看handleResponse做了什么
+    ```js
+    const handleResponse = () => /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */ respond(ctx);
+    ```
+    现在要做的就是响应ctx了
+    ```js
+    ```
     ```js
     ```
     ```js
