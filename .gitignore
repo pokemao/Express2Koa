@@ -39,7 +39,7 @@ bower_components
 build/Release
 
 # Dependency directories
-node_modules/
+# node_modules/ # 这个项目比较特殊，由于要读node_modules中的源代码，不排除对node_modules/文件夹的上传了
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)
