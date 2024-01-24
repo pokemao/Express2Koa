@@ -9,6 +9,7 @@
     "start:koa2-pure": "nodemon ./src/dataServer.js & nodemon ./src/koa2-pure.js",
     "start:express": "nodemon ./src/dataServer.js & nodemon ./src/express.js",
     "start:express-pure": "nodemon ./src/dataServer.js & nodemon ./src/express-pure.js",
+    "start:express2koa": "nodemon ./src/dataServer.js & nodemon ./src/express.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
