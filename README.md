@@ -8041,12 +8041,12 @@ app.listen('3124', () => {
     console.log('run in 3124');
 })
 ```
-可以看到我们在`middleware3`和`middleware1`中都调用了`ctx.body`，启动这个`koa服务器`，首先会执行`middleware3`中的`ctx.body`，然后触发`ctx对象`上\`body属性`的`setter`，然后设置一些值，然后会执行`middleware1`中的`ctx.body`，然后又一次触发`ctx对象`上`body属性`的`setter`，两次触发`ctx对象`上`body属性`的`setter`都没有直接执行`res.end`所以不会关闭`响应对象res`，然后等`middleware1`的`await`后面的回调函数执行完毕之后，`handleResponse函数`也就执行了，这个时候才触发`res.end`，所以在`koa`中`ctx.body`可以任意设置多次，会以执行顺序(洋葱模型)上最后一次的执行为最后的值
+可以看到我们在`middleware3`和`middleware1`中都调用了`ctx.body`，启动这个`koa服务器`，首先会执行`middleware3`中的`ctx.body`，然后触发`ctx对象`上`body属性`的`setter`，然后设置一些值，然后会执行`middleware1`中的`ctx.body`，然后又一次触发`ctx对象`上`body属性`的`setter`，两次触发`ctx对象`上`body属性`的`setter`都没有直接执行`res.end`所以不会关闭`响应对象res`，然后等`middleware1`的`await`后面的回调函数执行完毕之后，`handleResponse函数`也就执行了，这个时候才触发`res.end`，所以在`koa`中`ctx.body`可以任意设置多次，会以执行顺序(洋葱模型)上最后一次的执行为最后的值\
 至此这个项目就彻底讲完了！！！\
 但是还有一个插曲，还记得之前说的要补充“`globalThis`，`global`，`process`的关系”这件事吗\
 `globalThis`在不同的环境会有不同的值\
-浏览器环境&#9;&#9;&#9;`globalThis === window`\
-`node`环境&#9;&#9;&#9;`globalThis === global`(`node`的全局对象)\
-`webworker`环境&#9;&#9;&#9;`globalThis === self`\
+浏览器环境       `globalThis === window`\
+`node`环境        `globalThis === global`(`node`的全局对象)\
+`webworker`环境   `globalThis === self`\
 在`node`环境中\
 `process`是`global`中的一个不可枚举的对象，`global对象`上面拥有着`node`环境中所有的对象
