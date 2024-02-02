@@ -59,14 +59,14 @@ app.listen('3124', () => {
 ```
 写在前面：1. 我为使用`app.use`创建的三个中间件起名为`middleware1, middleware2, middleware3`；2. `koa`是没有路由的概念的，不论客户端是通过什么样的路由发来请求，不管客户端是`get`还是`post`发来请求，都会运行`middleware1, middleware2, middleware3`三个中间件来处理这个请求\
 0. `require('koa')`的时候会做什么
-    在我们的项目`require('koa')`的时候，就`koa`这个库内已经开始初始化一些东西了，比如为`reponse对象`设置`代理对象ctx`，这个时候使用库就是`delegate`，这个代理方式不是通过`proxy`，而是通过在我们为`ctx的属性`赋值时会触发`ctx对象`上这个属性的`setter`，然后在这个`setter`里面再对`response对象`上的这个属性赋值，从而实现代理，设置代理的代码如下\
+    在我们的项目`require('koa')`的时候，就`koa`这个库内已经开始初始化一些东西了，比如为`reponse对象`设置`代理对象ctx`，这个时候使用库就是`delegate`，这个代理方式不是通过`proxy`，而是通过在我们为`ctx的属性`赋值时会触发`ctx对象`上这个属性的`setter`，然后在这个`setter`里面再对`response对象`上的这个属性赋值，从而实现代理，设置代理的代码如下
     ```js
     // proto为ctx
     delegate(proto, 'response')
     ```
     设置了代理之后的效果是什么呢？就是在为`ctx.body属性`赋值的时候实际上是为`response.body`赋值，但是最后一定要反映到对`node`的`http模块`原生的`res对象`的操作上，这个是怎么实现的呢？实际在为`response.body`赋值的时候会触发`respose`这个`对象body`的`setter`，在这个`setter`里面，`koa`会对`node`的`http模块`原生的`res对象`进行操作(后面会有详细的内容对这个进行介绍——在执行到`ctx.body = ...`的时候)\
     详细说`ctx中属性的setter函数`长什么样子呢？比如`ctx`里常用的`属性body`，这个`body属性`的`setter`就是在require('koa')时由`delegate这个库`通过`Delegator.prototype.setter`这个函数把`setter函数`挂在到`ctx的body属性`上的
-    就以`body属性`为例，看看`Delegator.prototype.setter`这个函数做了什么\
+    就以`body属性`为例，看看`Delegator.prototype.setter`这个函数做了什么
     ```js
     Delegator.prototype.setter = function(name){
       // name === "body"
@@ -92,7 +92,7 @@ app.listen('3124', () => {
     };
     ```
     `koa`内部首先使用`delegates这个库`为`response`设置代理，代理对象就是`ctx`，实现的方式是为`ctx`的属性设置`setter函数`\
-    同时`require('koa')`的时候还会使用`库delegates`为`request对象`设置代理，代理对象还是`ctx`\
+    同时`require('koa')`的时候还会使用`库delegates`为`request对象`设置代理，代理对象还是`ctx`
     ```js
     delegate(proto, 'request')
     ```
@@ -162,16 +162,16 @@ app.listen('3124', () => {
       }
     }
     ```
-    `constructor`是`Koa`这个类的构造函数
-    `constructor`内部调用了`super`说明`Koa`是一个子类
-    从代码中可以看出 对当前服务器app，进行一些基础的配置
-    关键点在于，`Koa`创建的服务器中`middleware`数组是空的，也就是说`koa`后面的代码调用`this.middleware.push`的都是我们自己的写的中间件`(middleware1, middleware2, middleware3)`
+    `constructor`是`Koa`这个类的构造函数\
+    `constructor`内部调用了`super`说明`Koa`是一个子类\
+    从代码中可以看出 对当前服务器app，进行一些基础的配置\
+    关键点在于，`Koa`创建的服务器中`middleware`数组是空的，也就是说`koa`后面的代码调用`this.middleware.push`的都是我们自己的写的中间件`(middleware1, middleware2, middleware3)`\
     不同于`express`, `express`里面会天生存在两个`express`自己提供的中间件，然后才是我们自己写的中间件，后面会提到
     ```js
     const Emitter = require("events");
     class Application extends Emitter
     ```
-    `Koa`是`node`中的事件类的子类
+    `Koa`是`node`中的事件类的子类\
     然后`constructor`内部
 2. `app.use()`在干什么
     ```js
@@ -184,8 +184,8 @@ app.listen('3124', () => {
       return this;
     }
     ```
-    `this`的指向就是`app`，通过`this.middleware.push(fn)`把我们写的中间件`async (ctx, next) => {}`，添加到一个数组中保存起来，且就像我们前面所说的
-    保存完毕`this.middleware`中只保存我们写的中间件，不同于`express`, `express`里面会天生存在两个`express`自己提供的中间件
+    `this`的指向就是`app`，通过`this.middleware.push(fn)`把我们写的中间件`async (ctx, next) => {}`，添加到一个数组中保存起来，且就像我们前面所说的\
+    保存完毕`this.middleware`中只保存我们写的中间件，不同于`express`, `express`里面会天生存在两个`express`自己提供的中间件\
     添加完所有的中间件的结果应该是`[middleware1，middleware2，middleware3]`
 3. `app.listen()`在干什么
     ```js
@@ -222,7 +222,7 @@ app.listen('3124', () => {
       return handleRequest;
     }
     ```
-    首先在`callback`中会调用`compose`函数，并把我们写的中间件组成的数组`[middleware1，middleware2，middleware3]`作为参数传进去
+    首先在`callback`中会调用`compose`函数，并把我们写的中间件组成的数组`[middleware1，middleware2，middleware3]`作为参数传进去\
     让我们看看`compose`函数内部对我们的三个中间件做了什么，然后返回什么了
     ```js
     function compose (middleware) {
@@ -257,12 +257,12 @@ app.listen('3124', () => {
       }
     }
     ```
-    `compose`这个函数在执行的时候没有对我们的中间件做任何操作，只是校验了一下中间的是不是函数，然后就返回了一个函数，这里我管返回的这个函数叫作`fnMiddleware`，目的是统一标识符，一会儿就可以看到了，然后`compose`就返回了
-    `callback`这个函数使用`fnMiddleware`这个标识符接受这个函数，然后`callback`这个函数返回函数指针`handleRequest`，函数指针`handleRequest`作为参数传入`http.createServer()`中，这个函数会在每次用户向连接套接字(区别于连接套接字，连接套接字监听连接请求，连接请求到来之后建立请求套接字)发送请求的时候被调用
-    `callback()`(也就是`this.callback()`)调用完毕返回`handleRequest`之后，`listen()`(也就是`app.listen()`)也会在调用完毕`server.listen(...args)`之后返回`server`这个对象
+    `compose`这个函数在执行的时候没有对我们的中间件做任何操作，只是校验了一下中间的是不是函数，然后就返回了一个函数，这里我管返回的这个函数叫作`fnMiddleware`，目的是统一标识符，一会儿就可以看到了，然后`compose`就返回了\
+    `callback`这个函数使用`fnMiddleware`这个标识符接受这个函数，然后`callback`这个函数返回函数指针`handleRequest`，函数指针`handleRequest`作为参数传入`http.createServer()`中，这个函数会在每次用户向连接套接字(区别于连接套接字，连接套接字监听连接请求，连接请求到来之后建立请求套接字)发送请求的时候被调用\
+    `callback()`(也就是`this.callback()`)调用完毕返回`handleRequest`之后，`listen()`(也就是`app.listen()`)也会在调用完毕`server.listen(...args)`之后返回`server`这个对象\
     仅仅通过看`handleRequest`这个函数是不能看到什么时候以及怎么调用我们创建的中间件的，接下来看当有请求到来的时候会做什么
 4. 当有一个请求到来会发生什么
-    当有一个请求到来的时候函数`handleRequest`会被执行
+    当有一个请求到来的时候函数`handleRequest`会被执行\
     让我们再看看函数`handleRequest`是什么样子的
     ```js
     const handleRequest = (req, res) => {
@@ -277,7 +277,7 @@ app.listen('3124', () => {
       });
     };
     ```
-    首先通过使用`node的http模块处`理好的`req和res对象`去塑造`koa的ctx对象`
+    首先通过使用`node的http模块处`理好的`req和res对象`去塑造`koa的ctx对象`\
     `createContext函数`的代码如下
     ```js
     createContext(req, res) {
@@ -312,8 +312,8 @@ app.listen('3124', () => {
       return context;
     }
     ```
-    在函数`createContext`中创建在我们中间件中使用的`ctx`对象`const ctx = this.createContext(req, res);`，`ctx -> context`
-    然后判断`this.ctxStorage`是否为`false`，如果是`false`就执行`this.handleRequest`函数
+    在函数`createContext`中创建在我们中间件中使用的`ctx`对象`const ctx = this.createContext(req, res);`，`ctx -> context`\ 
+    然后判断`this.ctxStorage`是否为`false`，如果是`false`就执行`this.handleRequest`函数\ 
     这个函数内部又做了什么呢
     ```js
     handleRequest(ctx, fnMiddleware) {
@@ -333,7 +333,7 @@ app.listen('3124', () => {
       return fnMiddleware(ctx).then(handleResponse).catch(onerror);
     }
     ```
-    先是设置基本的响应码，然后创建一些函数
+    先是设置基本的响应码，然后创建一些函数\
     之后就执行`onFinished`这个函数了
     ```js
     function onFinished (msg, listener) {
@@ -350,7 +350,7 @@ app.listen('3124', () => {
       return msg
     }
     ```
-    注意`onFinished`这个函数参数的名字很奇怪，应该是为了适配其他地方使用这个函数时的语义
+    注意`onFinished`这个函数参数的名字很奇怪，应该是为了适配其他地方使用这个函数时的语义\
     进入`onFinished`这个函数后首先就是执行函数`isFinished`
     ```js
     function isFinished (msg) {
@@ -373,8 +373,8 @@ app.listen('3124', () => {
       return undefined
     }
     ```
-    `isFinished`这个函数具体在做什么不太清楚
-    这次调用会进入到`typeof msg.finished === 'boolean'`这里面, 最后返回`false`
+    `isFinished`这个函数具体在做什么不太清楚\
+    这次调用会进入到`typeof msg.finished === 'boolean'`这里面, 最后返回`false`\
     `isFinished`返回`false`之后，`onFinished`这个函数内部继续执行函数`wrap(listener)`
     ```js
     function wrap (fn) {
@@ -396,9 +396,9 @@ app.listen('3124', () => {
       return res.runInAsyncScope.bind(res, fn, null)
     }
     ```
-    `asyncHooks`是哪里来的呢？
-    这是node基本库提供的一个对象，相当于`var asyncHooks = require('async_hooks')`
-    这里做的工作猜测是，如果当前启动服务器的`node`环境(`node`版本)支持`async_hooks`这库，就是用这个库对传入的`fn`, 也就是错误处理函数`const onerror = (err) => ctx.onerror(err);`进行包装，包装成一个异步执行的函数返回；如果不支持`async_hooks`那么就直接返回作为参数传入这个函数的错误处理函数`onerror`
+    `asyncHooks`是哪里来的呢？\
+    这是node基本库提供的一个对象，相当于`var asyncHooks = require('async_hooks')`\
+    这里做的工作猜测是，如果当前启动服务器的`node`环境(`node`版本)支持`async_hooks`这库，就是用这个库对传入的`fn`, 也就是错误处理函数`const onerror = (err) => ctx.onerror(err);`进行包装，包装成一个异步执行的函数返回；如果不支持`async_hooks`那么就直接返回作为参数传入这个函数的错误处理函数`onerror`\
     `wrap`函数的返回值回作为参数被`attachListener`函数使用
     ```js
     function attachListener (msg, listener) {
@@ -417,7 +417,7 @@ app.listen('3124', () => {
       attached.queue.push(listener)
     }
     ```
-    对于我们第一次从客户端向这个`koa`服务器发起请求的时候，`attached`的值是`undefined`
+    对于我们第一次从客户端向这个`koa`服务器发起请求的时候，`attached`的值是`undefined`\
     所以会执行`createListener`这个函数
     ```js
     function createListener (msg) {
@@ -438,7 +438,7 @@ app.listen('3124', () => {
       return listener
     }
     ```
-    `createListener`函数内部会创建一个`listener`函数，并在为这个函数对象添加`queue`属性，然后返回这个函数对象`listener`
+    `createListener`函数内部会创建一个`listener`函数，并在为这个函数对象添加`queue`属性，然后返回这个函数对象`listener`\
     这个函数对象返回的时候会被赋值给`attachListener`里面创建的`attached`变量
     然后执行`attachFinishedListener`这个函数
     ```js
@@ -548,8 +548,8 @@ app.listen('3124', () => {
       return thunk
     }
     ```
-    函数`attachFinishedListener`调用`first`函数时，`stuff`是`[[msg, 'end', 'finish']]`，`msg`是`http`模块提供的原生的`res`对象
-    这种形式的传递参数导致`first`函数内部的双层`for`循环的外层`for`循环只会执行一次
+    函数`attachFinishedListener`调用`first`函数时，`stuff`是`[[msg, 'end', 'finish']]`，`msg`是`http`模块提供的原生的`res`对象\
+    这种形式的传递参数导致`first`函数内部的双层`for`循环的外层`for`循环只会执行一次\
     内层`for`循环会调用函数`listener`, 在内层`for`循环的第一次执行时的调用方式是`listener('end', 调用first的函数attachFinishedListener中创建的onFinish函数)`
     ```js
     function listener(event, done) {
@@ -569,12 +569,12 @@ app.listen('3124', () => {
       }
     }
     ```
-    执行`listener`函数会返回一个函数
-    然后`first`函数会让`http`模块提供的原生的`res`对象对`‘end’`这个事件进行监听
-    然后first的双层循环的内部`for`循环会执行`j=2`的值，然后再次执行`listener('finish', 调用first的函数attachFinishedListener中创建的onFinish函数)`
-    和上面的过程一样，执行`listener函数`会返回一个函数
-    然后`first函数`会让http模块提供的原生的`res对象`对`‘finish’`这个事件进行监听
-    做完上面这些事儿之后，`first`会在创造一些函数，并把创造的函数`thunk`返回
+    执行`listener`函数会返回一个函数\
+    然后`first`函数会让`http`模块提供的原生的`res`对象对`‘end’`这个事件进行监听\
+    然后first的双层循环的内部`for`循环会执行`j=2`的值，然后再次执行`listener('finish', 调用first的函数attachFinishedListener中创建的onFinish函数)`\
+    和上面的过程一样，执行`listener函数`会返回一个函数\
+    然后`first函数`会让http模块提供的原生的`res对象`对`‘finish’`这个事件进行监听\
+    做完上面这些事儿之后，`first`会在创造一些函数，并把创造的函数`thunk`返回\
     执行权重新回到`attachFinishedListener函数`里，这个调用栈有点深，我们把`attachFinishedListener函数`再写一遍
     ```js
     function attachFinishedListener (msg, callback) {
@@ -626,14 +626,14 @@ app.listen('3124', () => {
       }
     }
     ```
-    `first函数`返回的在`first函数`内部创建的`thunk函数`被`attachFinishedListener函数`内部创建的`eeMsg， eeSocket两个对象`"捕获"，注意这时`eeMsg === eeSocket`, 一会儿会用到
-    然后创建了一个`onSocket函数`
-    之后判读`msg.socket`是不是空，发现不是空
-    执行`onSocket(msg.socket)`，`msg`是`http`模块提供的原生的`res对象`
-    先从`msg`也就是`http`模块提供的原生的`res对象`监听的事件中，把`‘socket’`从事件列表里面的`onSocket函数`去掉，
-    向`req`的`socket对象`上加两个叫`'error'`和`'close'`的事件监听
-    然后就`first函数`再次返回`thunk函数`
-    之后`onSocket`返回了`undefined`
+    `first函数`返回的在`first函数`内部创建的`thunk函数`被`attachFinishedListener函数`内部创建的`eeMsg， eeSocket两个对象`"捕获"，注意这时`eeMsg === eeSocket`, 一会儿会用到\
+    然后创建了一个`onSocket函数`\
+    之后判读`msg.socket`是不是空，发现不是空\
+    执行`onSocket(msg.socket)`，`msg`是`http`模块提供的原生的`res对象`\
+    先从`msg`也就是`http`模块提供的原生的`res对象`监听的事件中，把`‘socket’`从事件列表里面的`onSocket函数`去掉，\
+    向`req`的`socket对象`上加两个叫`'error'`和`'close'`的事件监听\
+    然后就`first函数`再次返回`thunk函数`\
+    之后`onSocket`返回了`undefined`\
     然后就回到了`函数attachListener`的调用里面
     ```js
     function attachListener (msg, listener) {
@@ -652,11 +652,11 @@ app.listen('3124', () => {
       attached.queue.push(listener)
     }
     ```
-    还记得吗？
-    `createListener函数`内部会创建一个`listener函数`，并在为这个函数对象添加`queue属性`，然后返回这个`函数对象listener`
-    `attached`就是这个返回的`函数listener`
-    但是在`attachListener函数`内部的`参数listener`是异步处理过后的错误处理函数
-    所以`attached.queue.push(listener)`就是把异步处理过后的错误处理函数加到`attached函数`的`queue属性`中
+    还记得吗？\
+    `createListener函数`内部会创建一个`listener函数`，并在为这个函数对象添加`queue属性`，然后返回这个`函数对象listener`\
+    `attached`就是这个返回的`函数listener`\
+    但是在`attachListener函数`内部的`参数listener`是异步处理过后的错误处理函数\
+    所以`attached.queue.push(listener)`就是把异步处理过后的错误处理函数加到`attached函数`的`queue属性`中\
     然后返回到`onFinished函数`中去执行
     ```js
     function onFinished (msg, listener) {
@@ -673,7 +673,7 @@ app.listen('3124', () => {
       return msg
     }
     ```
-    `onFinished函数`返回处理过后的`http`模块提供的原生的`res对象`
+    `onFinished函数`返回处理过后的`http`模块提供的原生的`res对象`\
     然后回到`函数handleRequest`中继续执行
     ```js
     handleRequest(ctx, fnMiddleware) {
@@ -690,12 +690,12 @@ app.listen('3124', () => {
       return fnMiddleware(ctx).then(handleResponse).catch(onerror);
     }
     ```
-    之后就是把之前构造好的`参数ctx`传入`函数fnMiddleware`中进行执行了
-    注意再次强调`fnMiddleware`就是之前在`koa`项目启动的时候，`compose函数`返回的`函数fnMiddleware`❕❕❕❕❕
-    到这里为止都没有开始执行我们的中间件`middleware1, middleware2, middleware3`，到目前为止都是在做一些初始化设置，做完这些设置之后，就要开始执行`fnMiddleware函数`然后执行我们的中间件了
-    但是在讲解执行`fnMiddleware函数`之前，我们先通过`fnMiddleware(ctx).then(handleResponse).catch(onerror)`对函数fnMiddleware做一个简单的分析
-    通过then和catch我们可以相信`fnMiddleware`会返回一个`promise`或者`fnMiddleware`是一个`async`函数，然后在没有错误发生的时候使用`handleResponse`处理，发生错误的时候使用`onerror`处理
-    现在让我们进入`fnMiddleware`，看看他是怎么执行我们的中间件的，为什么能实现洋葱模型
+    之后就是把之前构造好的`参数ctx`传入`函数fnMiddleware`中进行执行了\
+    注意再次强调`fnMiddleware`就是之前在`koa`项目启动的时候，`compose函数`返回的`函数fnMiddleware`❕❕❕❕❕\
+    到这里为止都没有开始执行我们的中间件`middleware1, middleware2, middleware3`，到目前为止都是在做一些初始化设置，做完这些设置之后，就要开始执行`fnMiddleware函数`然后执行我们的中间件了\
+    但是在讲解执行`fnMiddleware函数`之前，我们先通过`fnMiddleware(ctx).then(handleResponse).catch(onerror)`对函数fnMiddleware做一个简单的分析\
+    通过then和catch我们可以相信`fnMiddleware`会返回一个`promise`或者`fnMiddleware`是一个`async`函数，然后在没有错误发生的时候使用`handleResponse`处理，发生错误的时候使用`onerror`处理\
+    现在让我们进入`fnMiddleware`，看看他是怎么执行我们的中间件的，为什么能实现洋葱模型\
     提示：从现在起我们要关注返回值了，这个非常重要
     ```js
     function fnMiddleware(context, next) {
@@ -719,9 +719,9 @@ app.listen('3124', () => {
       }
     }
     ```
-    首先第一步定义一个`变量index`，值为`-1`，`koa`将使用这个变量作为一个判断条件来遍历`middleware数组`的，`index`用来防止你在一个中间件中调用`next`大于`1`次，`middleware`这个数组是在我们使用`app.listen`时，`koa`内部会执行`compose(this.middleware)`的时候通过参数传入的，`this.middleware`这个数组里面存的就是我们写的三个中间件`middleware1, middleware2, middleware3`
-    然后马上就执行`dispatch(0)`，并且返回，`dispatch函数`是什么呢，就写在`fnMiddleware函数`内部
-    所以`fnMiddleware函数`的返回值就是`dispatch(0)`的执行结果，`dispatch函数`在参数为`0`的时候的返回值就是`fnMiddleware函数`的返回值，我们可以直观的看到`dispatch函数`的返回值是一个`Promise`, 所以`fnMiddleware函数`的返回值就是一个`Promise`, 和我们之前分析的一致
+    首先第一步定义一个`变量index`，值为`-1`，`koa`将使用这个变量作为一个判断条件来遍历`middleware数组`的，`index`用来防止你在一个中间件中调用`next`大于`1`次，`middleware`这个数组是在我们使用`app.listen`时，`koa`内部会执行`compose(this.middleware)`的时候通过参数传入的，`this.middleware`这个数组里面存的就是我们写的三个中间件`middleware1, middleware2, middleware3`\
+    然后马上就执行`dispatch(0)`，并且返回，`dispatch函数`是什么呢，就写在`fnMiddleware函数`内部\
+    所以`fnMiddleware函数`的返回值就是`dispatch(0)`的执行结果，`dispatch函数`在参数为`0`的时候的返回值就是`fnMiddleware函数`的返回值，我们可以直观的看到`dispatch函数`的返回值是一个`Promise`, 所以`fnMiddleware函数`的返回值就是一个`Promise`, 和我们之前分析的一致\
     现在就让我们开始执行`dispatch(0)`
     ```js
     function dispatch (i) {
@@ -994,13 +994,13 @@ app.listen('3124', () => {
       }
     }
     ```
-    从`dispatch函数`开始返回`Promise.resolve()`的时候洋葱模型就开始了
-    首先我们卖个关子，我在这里放一张现在的调用栈的图片，便于观察每个函数返回时都是返回到哪里了
-    ![一次请求到来，形成的最深的调用栈](./README_img/koa中间件.drawio.png)
-    ❕❕❕❕❕`dispatch`返回会返回到哪里？
-    ❕❕❕❕❕这个问题非常关键
-    看看我们的执行过程，就知道了，这个函数返回不是返回到上一个`dispatch`
-    比如我们现在调用的不是`dispatch(3)`嘛，他返回不是返回到`dispatch(2)`, 这一点非常关键❕❕❕❕❕，不要乱
+    从`dispatch函数`开始返回`Promise.resolve()`的时候洋葱模型就开始了\
+    首先我们卖个关子，我在这里放一张现在的调用栈的图片，便于观察每个函数返回时都是返回到哪里了\
+    ![一次请求到来，形成的最深的调用栈](./README_img/koa中间件.drawio.png)\
+    ❕❕❕❕❕`dispatch`返回会返回到哪里？\
+    ❕❕❕❕❕这个问题非常关键\
+    看看我们的执行过程，就知道了，这个函数返回不是返回到上一个`dispatch`\
+    比如我们现在调用的不是`dispatch(3)`嘛，他返回不是返回到`dispatch(2)`, 这一点非常关键❕❕❕❕❕，不要乱\
     `dispatch(3)`返回是返回到我们的第三个中间件`middleware3`中`next()`执行的位置
     ```js
     async middleware3(ctx, next) => {
@@ -1023,13 +1023,13 @@ app.listen('3124', () => {
         return "third"
     }
     ```
-    现在遇到了`await`了，`await`会干什么，这个也很关键，这个是大家经常搞乱`koa`怎么实现洋葱模型的关键
-    `await`是什么的变形，再说清楚点，`async-await`是什么的语法糖？
-    是`Promise和generate`的语法糖！！！
-    `await`对标的是`generate`里面的什么？
-    `await`对标的是`generate里面的yeild`
-    在一个`generate函数`执行遇到`yeild`的时候会干什么？
-    这个`generator函数`会返回，返回值是什么，是`yeild`后面跟的值
+    现在遇到了`await`了，`await`会干什么，这个也很关键，这个是大家经常搞乱`koa`怎么实现洋葱模型的关键\
+    `await`是什么的变形，再说清楚点，`async-await`是什么的语法糖？\
+    是`Promise和generate`的语法糖！！！\
+    `await`对标的是`generate`里面的什么？\
+    `await`对标的是`generate里面的yeild`\
+    在一个`generate函数`执行遇到`yeild`的时候会干什么？\
+    这个`generator函数`会返回，返回值是什么，是`yeild`后面跟的值\
     那对于`await`来说呢，当一个函数执行到`await`的时候`await`也会返回，返回值和`yeild`是不同的，`await`永远会放回一个`pending状态的Promise`，这么说可能不太好理解，我们把`await`会返回的东西写一下
     ```js
     async middleware3(ctx, next) => {
@@ -1042,17 +1042,17 @@ app.listen('3124', () => {
         })
     }
     ```
-    上面这段代码中由于`.then中的回调函数`还没有被执行(因为`Promise.resoled()`虽然是`fulfill`的，但这个`fulfill`状态的`promise`只会把`.then中的回调函数`放入到微任务队列中，但是这个回调函数还没有被执行)，由于`.then中的回调函数`还没有被执行，所以`.then创建的Promise`是`pending状态`的。这里有个小问题，如果`next函数`返回的不是`promise对象`怎么办？一会儿我们解答
-    那什么时候`generate函数`继续执行呢？在`generate函数`的`generator`调用`next`的时候继续执行，然后把`next`里面传入的参数传递到`generate`里面去(比如`const res = yeild 1`，`next`中传入的值会被`res`接受)
-    那么`await`什么时候把值传回来让`middleware3`继续执行呢？在`await`后面直接跟随的`Promise`(在这里就是`dispatch(3)`返回的`Promise.resolve()`)变成`fulfilled`之后并且这个`fulfilled`的`Promise`在微任务队列里面被执行的时候，作为`await`之后的代码就继续执行了(比如`const res = await Promise.resolve(1)`，当`Promise.resolve(1)`在微任务队列中就绪的时候，`1`就会给到`res`，然后代码继续执行)
-    这里就引出了一个问题，也是刚刚想说的小问题如果`await`后面跟的不是`Promise`不就不能使用上面的规范了嘛？
-    没关系，`await`会判断后面的值是否是`Promise`，如果不是就使用`Promise.resolve()`包装一下
-    前面做了这么多解释，接下来就要继续执行代码了
-    `await`会直接让`middleware3`这个函数返回，返回值是一个`pending的Promise`，就是我们刚刚说的`.then创建的promise`
-    在`await`返回的同时，由于有一个`pending状态的Promise`产生了————就是`next()`返回的`<pending> Promise`同时也是`dispatch(3)`返回的`<pending> Promise`，微任务队列会加上一个微任务`(microTasks:\[middleware3继续从await返回执行\])`，并且在执行微任务的时候会导致返回到`middleware3`继续执行
-    注意区分：`middleware3`通过`await`返回的是一个`.then创建的pending状态的Promise对象`，由于`Promise.resolve()`的执行，会向微任务队列中添加`.then里面的回调函数`，是这样的一个关系。把`await`后面的代码改造成一个`.then包裹的回调函数`，然后把这个`.then函数创建的Promise`返回，这些都是`await`这个关键字的作用；然而把`.then里面的回调`放入微任务队列的原因是`Promise.resolve()`是一个`fulfilled状态的promise`
-    现在我们再说网上大部分帖子搞乱的是什么————他们都说因为`koa`在调用中间件的代码中`return Promise.resolve(fn(context, dispatch.bind(null, i + 1)));` 返回了`Promise.resolve()`包装的值，所以能实现洋葱模型，这样的话就会让人产生误解————"`koa`是因为调用中间件之后对中间件的返回值进行了`Promise.resolve()`包装才实现了洋葱模型"，其实不是的，难道`express`不支持洋葱模型的原因是`express`调用中间件之后，对中间件的返回值没有使用`Promise.resolve()`进行包装吗？不是的！`express`没能实现洋葱模型的原因是`express`调用中间件之后没有返回中间件的返回值！！！`koa`使用`Promise.resolve()`对返回值进行包裹的原因是————对于`node`版本较低的时候，`node`是不支持`async-await`的，这个时候`koa`可以使用`next().then()`的方式实现`async-await`的效果，但是现在的`node`中支持了`async-await`，`async`和`await`都会对后面跟着的`非Promise值`使用`Promise.resolve()`包装，所以现在就算`koa`在返回"中间件调用的返回值"时不使用`Promise.resolve()`包装也是可以实现洋葱模型的，就是改成`return fn(context, dispatch.bind(null, i + 1));` 也是可以支持洋葱模型的，同理只要`express`会把中间件调用的结果返回到上一个`next()`, 那么`express`也是能实现洋葱模型的！！！后面我们会基于这个想法对`express`进行改造，使其实现洋葱模型，改造过程可以说是非常简单
-    `middleware3`返回会返回到哪个函数呢？就是`middleware3`这个函数在函数调用栈中的上一个函数是什么？那个函数调用的`middleware3`这个函数？
+    上面这段代码中由于`.then中的回调函数`还没有被执行(因为`Promise.resoled()`虽然是`fulfill`的，但这个`fulfill`状态的`promise`只会把`.then中的回调函数`放入到微任务队列中，但是这个回调函数还没有被执行)，由于`.then中的回调函数`还没有被执行，所以`.then创建的Promise`是`pending状态`的。这里有个小问题，如果`next函数`返回的不是`promise对象`怎么办？一会儿我们解答\
+    那什么时候`generate函数`继续执行呢？在`generate函数`的`generator`调用`next`的时候继续执行，然后把`next`里面传入的参数传递到`generate`里面去(比如`const res = yeild 1`，`next`中传入的值会被`res`接受)\
+    那么`await`什么时候把值传回来让`middleware3`继续执行呢？在`await`后面直接跟随的`Promise`(在这里就是`dispatch(3)`返回的`Promise.resolve()`)变成`fulfilled`之后并且这个`fulfilled`的`Promise`在微任务队列里面被执行的时候，作为`await`之后的代码就继续执行了(比如`const res = await Promise.resolve(1)`，当`Promise.resolve(1)`在微任务队列中就绪的时候，`1`就会给到`res`，然后代码继续执行)\
+    这里就引出了一个问题，也是刚刚想说的小问题如果`await`后面跟的不是`Promise`不就不能使用上面的规范了嘛？\
+    没关系，`await`会判断后面的值是否是`Promise`，如果不是就使用`Promise.resolve()`包装一下\
+    前面做了这么多解释，接下来就要继续执行代码了\
+    `await`会直接让`middleware3`这个函数返回，返回值是一个`pending的Promise`，就是我们刚刚说的`.then创建的promise`\
+    在`await`返回的同时，由于有一个`pending状态的Promise`产生了————就是`next()`返回的`<pending> Promise`同时也是`dispatch(3)`返回的`<pending> Promise`，微任务队列会加上一个微任务`(microTasks:\[middleware3继续从await返回执行\])`，并且在执行微任务的时候会导致返回到`middleware3`继续执行\
+    注意区分：`middleware3`通过`await`返回的是一个`.then创建的pending状态的Promise对象`，由于`Promise.resolve()`的执行，会向微任务队列中添加`.then里面的回调函数`，是这样的一个关系。把`await`后面的代码改造成一个`.then包裹的回调函数`，然后把这个`.then函数创建的Promise`返回，这些都是`await`这个关键字的作用；然而把`.then里面的回调`放入微任务队列的原因是`Promise.resolve()`是一个`fulfilled状态的promise`\
+    现在我们再说网上大部分帖子搞乱的是什么————他们都说因为`koa`在调用中间件的代码中`return Promise.resolve(fn(context, dispatch.bind(null, i + 1)));` 返回了`Promise.resolve()`包装的值，所以能实现洋葱模型，这样的话就会让人产生误解————"`koa`是因为调用中间件之后对中间件的返回值进行了`Promise.resolve()`包装才实现了洋葱模型"，其实不是的，难道`express`不支持洋葱模型的原因是`express`调用中间件之后，对中间件的返回值没有使用`Promise.resolve()`进行包装吗？不是的！`express`没能实现洋葱模型的原因是`express`调用中间件之后没有返回中间件的返回值！！！`koa`使用`Promise.resolve()`对返回值进行包裹的原因是————对于`node`版本较低的时候，`node`是不支持`async-await`的，这个时候`koa`可以使用`next().then()`的方式实现`async-await`的效果，但是现在的`node`中支持了`async-await`，`async`和`await`都会对后面跟着的`非Promise值`使用`Promise.resolve()`包装，所以现在就算`koa`在返回"中间件调用的返回值"时不使用`Promise.resolve()`包装也是可以实现洋葱模型的，就是改成`return fn(context, dispatch.bind(null, i + 1));` 也是可以支持洋葱模型的，同理只要`express`会把中间件调用的结果返回到上一个`next()`, 那么`express`也是能实现洋葱模型的！！！后面我们会基于这个想法对`express`进行改造，使其实现洋葱模型，改造过程可以说是非常简单\
+    `middleware3`返回会返回到哪个函数呢？就是`middleware3`这个函数在函数调用栈中的上一个函数是什么？那个函数调用的`middleware3`这个函数？\
     是`fn(ctx, dipatch.bind(null, 2))`
     ```js
     function dispatch (i) {
@@ -1076,12 +1076,12 @@ app.listen('3124', () => {
       }
     }
     ```
-    `fn(context, dispatch.bind(null, i + 1))`返回，返回值就是刚刚说的`middleware3`内部执行到`await`时的返回值，`一个pending状态的Promise`
-    然后`dispatch(2)`就要返回了，返回值是`Promise.resolve(<pending> Promise)`, 由于`Promise.resolve()`具有幂等性，所以相当于是返回了`<pending> Promise`
-    这里不需要向微任务队列中添加微任务，原因是这个`Promise.resolve(fn(context, dispatch.bind(null, i + 1)))`没有调用`.then`并且在前面也没有`await`
-    这里补充一下，加入微任务队列的不是`Promise对象`，而是`Promise对象`后面的`.then`的任务，当一个`Promise`就绪的时候会把`.then里面的任务`加入到微任务队列中
-    注：有的时候会把一个`Promise`的执行过程加入到微任务队列中，这个是`V8`做的事情，有一道经典的面试题是这个过程
-    `dispatch(2)`要返回`<pending> Promise`到哪里呢？其实就是在问哪里调用的`dispatch(2)`？
+    `fn(context, dispatch.bind(null, i + 1))`返回，返回值就是刚刚说的`middleware3`内部执行到`await`时的返回值，`一个pending状态的Promise`\
+    然后`dispatch(2)`就要返回了，返回值是`Promise.resolve(<pending> Promise)`, 由于`Promise.resolve()`具有幂等性，所以相当于是返回了`<pending> Promise`\
+    这里不需要向微任务队列中添加微任务，原因是这个`Promise.resolve(fn(context, dispatch.bind(null, i + 1)))`没有调用`.then`并且在前面也没有`await`\
+    这里补充一下，加入微任务队列的不是`Promise对象`，而是`Promise对象`后面的`.then`的任务，当一个`Promise`就绪的时候会把`.then里面的任务`加入到微任务队列中\
+    注：有的时候会把一个`Promise`的执行过程加入到微任务队列中，这个是`V8`做的事情，有一道经典的面试题是这个过程\
+    `dispatch(2)`要返回`<pending> Promise`到哪里呢？其实就是在问哪里调用的`dispatch(2)`？\
     是在我们的中间件`middleware2`中，调用`next()`的时候调用的`dispatch(2)`，所以要把`<pending> Promise`作为`middleware2`中`next()的返回值`
     ```js
     async middleware2(ctx, next) => {
@@ -1112,13 +1112,13 @@ app.listen('3124', () => {
         return "second"
     }
     ```
-    这里调用了`.then`，会发生什么？
-    就像我们前面说的，调用了`.then`，就会等调用`.then`的那个`Promise在状态变成fulfilled`的时候把`.then中的回调函数`加入到微任务队列中
-    由于`<pending> Promise不是fulfilled状态的`，所以微任务队列不会加微任务
-    然后就继续执行`middleware2的next()`之后的内容了
-    打印`4`，返回`"second"`这个字符串，注意这里返回的是字符串
-    但是这是个`async函数`，`async函数`在返回返回值的时候会做和`await`相同的处理，会把不是`Promise的返回值`包装一下！！！！！所以这里真实的返回值是`Promise.resolve("second")`
-    `middleware2`返回了会返回到哪里呢？还是这个老生常谈的问题
+    这里调用了`.then`，会发生什么？\
+    就像我们前面说的，调用了`.then`，就会等调用`.then`的那个`Promise在状态变成fulfilled`的时候把`.then中的回调函数`加入到微任务队列中\
+    由于`<pending> Promise不是fulfilled状态的`，所以微任务队列不会加微任务\
+    然后就继续执行`middleware2的next()`之后的内容了\
+    打印`4`，返回`"second"`这个字符串，注意这里返回的是字符串\
+    但是这是个`async函数`，`async函数`在返回返回值的时候会做和`await`相同的处理，会把不是`Promise的返回值`包装一下！！！！！所以这里真实的返回值是`Promise.resolve("second")`\
+    `middleware2`返回了会返回到哪里呢？还是这个老生常谈的问题\
     会返回到`fn(ctx, dispacth(null, 1))`
     ```js
     async middleware1(ctx, next) => {
@@ -1166,10 +1166,10 @@ app.listen('3124', () => {
       }
     }
     ```
-    `fn(context, dispatch.bind(null, i + 1))`要返回了，返回值就是刚刚说的`middleware2的返回值`(注意这里不是通过`await`返回的，是`middleware2`通过`return`返回的)`Promise.resolve("second")`
-    然后`dispatch(1)`就要返回了，返回值是`Promise.resolve(Promise.resolve("second"))`, 由于`Promise.resolve()`具有幂等性，所以相当于是返回了`Promise.resolve("second")`
-    这里不需要向微任务队列中添加微任务，原因是这个`Promise.resolve(fn(context, dispatch.bind(null, i + 1)))`没有调用`.then`并且在前面也没有`await`
-    `dispatch(1)`要返回`Promise.resolve("second")`到哪里呢？其实就是在问哪里调用的`dispatch(1)`？
+    `fn(context, dispatch.bind(null, i + 1))`要返回了，返回值就是刚刚说的`middleware2的返回值`(注意这里不是通过`await`返回的，是`middleware2`通过`return`返回的)`Promise.resolve("second")`\
+    然后`dispatch(1)`就要返回了，返回值是`Promise.resolve(Promise.resolve("second"))`, 由于`Promise.resolve()`具有幂等性，所以相当于是返回了`Promise.resolve("second")`\
+    这里不需要向微任务队列中添加微任务，原因是这个`Promise.resolve(fn(context, dispatch.bind(null, i + 1)))`没有调用`.then`并且在前面也没有`await`\
+    `dispatch(1)`要返回`Promise.resolve("second")`到哪里呢？其实就是在问哪里调用的`dispatch(1)`？\
     是在我们的`中间件middleware1`中，调用`next()`的时候调用的`dispatch(1)`，所以要把`Promise.resolve("second")`作为`middleware1中next()的返回值`
     ```js
     async middleware1(ctx, next) => {
@@ -1243,8 +1243,8 @@ app.listen('3124', () => {
         })
     }
     ```
-    `await`返回这个`pending的Promise`的同时，由于有一个`fulfilled状态的Promise`产生了，微任务队列会加上一个微任务`(microTasks:\[middleware3继续从await返回执行，middleware1继续从await返回执行\])`，并且在执行微任务的时候会导致返回到`middleware1`的上下文中继续执行
-    然后`middleware1`就要返回了，`middleware1`返回会返回到哪个函数呢？就是`middleware1这个函数`在函数调用栈中的上一个函数是什么？那个函数调用的`middleware1这个函数`？
+    `await`返回这个`pending的Promise`的同时，由于有一个`fulfilled状态的Promise`产生了，微任务队列会加上一个微任务`(microTasks:\[middleware3继续从await返回执行，middleware1继续从await返回执行\])`，并且在执行微任务的时候会导致返回到`middleware1`的上下文中继续执行\
+    然后`middleware1`就要返回了，`middleware1`返回会返回到哪个函数呢？就是`middleware1这个函数`在函数调用栈中的上一个函数是什么？那个函数调用的`middleware1这个函数`？\
     是`dispatch(0)`
     ```js
         function dispatch (i) {
@@ -1267,10 +1267,10 @@ app.listen('3124', () => {
       }
     }
     ```
-    `fn(context, dispatch.bind(null, i + 1))`要返回了，返回值就是刚刚说的`middleware1的返回值`(注意这里不是通过`await`返回的，是`middleware1通过return返回的`)`<pending> Promise`
-    然后`dispatch(0)`就要返回了，返回值是`Promise.resolve(<pending> Promise)`, 由于`Promise.resolve()`具有幂等性，所以相当于是返回了`<pending> Promise`
-    这里不需要向微任务队列中添加微任务，原因是这个`Promise.resolve(fn(context, dispatch.bind(null, i + 1)))`没有调用`.then`并且在前面也没有`await`
-    `dispatch(0)`要返回`<pending> Promise`到哪里呢？其实就是在问哪里调用的`dispatch(0)`？
+    `fn(context, dispatch.bind(null, i + 1))`要返回了，返回值就是刚刚说的`middleware1的返回值`(注意这里不是通过`await`返回的，是`middleware1通过return返回的`)`<pending> Promise`\
+    然后`dispatch(0)`就要返回了，返回值是`Promise.resolve(<pending> Promise)`, 由于`Promise.resolve()`具有幂等性，所以相当于是返回了`<pending> Promise`\
+    这里不需要向微任务队列中添加微任务，原因是这个`Promise.resolve(fn(context, dispatch.bind(null, i + 1)))`没有调用`.then`并且在前面也没有`await`\
+    `dispatch(0)`要返回`<pending> Promise`到哪里呢？其实就是在问哪里调用的`dispatch(0)`？\
     是在`koa`的`fnMiddleware函数`，终于出来了，`fnMiddleware`这个函数是什么来着？
     ```js
     function fnMiddleware(context, next) {
@@ -1294,7 +1294,7 @@ app.listen('3124', () => {
       }
     }
     ```
-    `fnMiddleware`直接返回了`dispatch(0)`，所以`fnMiddleware的返回值`是`<pending> Promise`
+    `fnMiddleware`直接返回了`dispatch(0)`，所以`fnMiddleware的返回值`是`<pending> Promise`\
    ` 函数fnMiddleware`会返回到哪里呢？是`handleRequest`
     ```js
     handleRequest(ctx, fnMiddleware) {
@@ -1307,14 +1307,14 @@ app.listen('3124', () => {
       return fnMiddleware(ctx) /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */ .then(handleResponse).catch(onerror);
     }
     ```
-    这里调用了`.then`，会发生什么？
-    就像我们前面说的，调用了`.then`，就会等`调用.then的那个Promise`在`状态变成fulfilled`的时候把`.then中的回调函数`加入到微任务队列中
-    由于`fnMiddleware`返回的`<pending> Promise`就`不是fulfilled状态的`，所以微任务队列会不加上微任务
-    然后`handleRequest`也要返回了，返回什么呢？
-    这是就要说到`.then()`会返回什么的问题了
-    `.then()的返回值`是`.then里面函数的返回值`，如果`.then里面的函数`返回的`不是Promise`，同样会用`Promise.resolve()`包裹一下，在返回出来
-    但是现在`.then里面的函数`没有执行，怎么知道返回值呢？
-    那么返回值就是`pending状态的Promise`
+    这里调用了`.then`，会发生什么？\
+    就像我们前面说的，调用了`.then`，就会等`调用.then的那个Promise`在`状态变成fulfilled`的时候把`.then中的回调函数`加入到微任务队列中\
+    由于`fnMiddleware`返回的`<pending> Promise`就`不是fulfilled状态的`，所以微任务队列会不加上微任务\
+    然后`handleRequest`也要返回了，返回什么呢？\
+    这是就要说到`.then()`会返回什么的问题了\
+    `.then()的返回值`是`.then里面函数的返回值`，如果`.then里面的函数`返回的`不是Promise`，同样会用`Promise.resolve()`包裹一下，在返回出来\
+    但是现在`.then里面的函数`没有执行，怎么知道返回值呢？\
+    那么返回值就是`pending状态的Promise`\
     然后`handleRequest`就要`返回pending状态的Promise`了，返回到哪里呢？
     ```js
     const handleRequest = (req, res) => {
@@ -1327,7 +1327,7 @@ app.listen('3124', () => {
       });
     };
     ```
-    首先`handleRequest(ctx, fn)`返回一个`pending状态的Promise`，然后`return pending状态的Promise`就会直接把这个`Promise对象`返回了，返回到哪里呢？
+    首先`handleRequest(ctx, fn)`返回一个`pending状态的Promise`，然后`return pending状态的Promise`就会直接把这个`Promise对象`返回了，返回到哪里呢？\
     这里补充一下，不管是什么状态的`Promise`，他们==都不是状态==，而是`Promise对象`，任何的状态都是`Promise的属性`，状态是依附于`Promise这个对象`存在的
     ```js
     listen(...args) {
@@ -1336,9 +1336,9 @@ app.listen('3124', () => {
       return server.listen(...args);
     }
     ```
-    这里就是`node`的`http模块`在接受到一个请求之后，执行执行`handleRequest = (req, res) => {}`回调函数的地方了
-    然后`node`就会发现时间循环中`handleRequest = (req, res) => {}`这个回调函数已经执行完毕了，该去执行微任务队列中的内容了
-    微任务队列现在是什么样子的呢？`microTasks:\[middleware3继续从await返回执行，middleware1继续从await返回执行\]`
+    这里就是`node`的`http模块`在接受到一个请求之后，执行执行`handleRequest = (req, res) => {}`回调函数的地方了\
+    然后`node`就会发现时间循环中`handleRequest = (req, res) => {}`这个回调函数已经执行完毕了，该去执行微任务队列中的内容了\
+    微任务队列现在是什么样子的呢？`microTasks:\[middleware3继续从await返回执行，middleware1继续从await返回执行\]`\
     所以会先回到`middleware3`，从`middleware3的await`后面继续执行，其实就是执行`await`创建的`.then中的回调函数`
     ```js
     async middleware3(ctx, next) => {
@@ -1351,8 +1351,8 @@ app.listen('3124', () => {
         return "third"
     }
     ```
-    之后就是打印`6`，然后返回`"third"`。`.then`里面的函数会把`不是Promise的返回值`包装用`Promise.resolve()`一下，然后返回。
-    当`.then里面的函数`返回`"third"`的时候，这个时候就会注意到这个`.then创建的Promise`的`状态从pending转变成fulfilled`了！！！
+    之后就是打印`6`，然后返回`"third"`。`.then`里面的函数会把`不是Promise的返回值`包装用`Promise.resolve()`一下，然后返回。\
+    当`.then里面的函数`返回`"third"`的时候，这个时候就会注意到这个`.then创建的Promise`的`状态从pending转变成fulfilled`了！！！\
     大家还记得这个`.then创建的promise`在哪里被调用`.then`了吗？是在`middleware2`中，下面是`middleware2`
     ```js
     async middleware2(ctx, next) => {
@@ -1383,8 +1383,8 @@ app.listen('3124', () => {
         return "second"
     }
     ```
-    所以这个`Promise.resolve("third")`后面的`.then里面的回调`就会被加入到微任务队列中，这时微任务队列会加入一个新任务 `microTasks:\[middleware1继续从await返回执行，middleware2中的.then中的回调函数\]`
-    之后继续执行微任务队列中的下一个微任务，就是继续执行`middleware1`
+    所以这个`Promise.resolve("third")`后面的`.then里面的回调`就会被加入到微任务队列中，这时微任务队列会加入一个新任务 `microTasks:\[middleware1继续从await返回执行，middleware2中的.then中的回调函数\]`\
+    之后继续执行微任务队列中的下一个微任务，就是继续执行`middleware1`\
     这里要解释一下：`middleware2`中的`"<pending> Promise".then(res => {console.log(res);});`的后面没有再调用`.then`，所以不用再关注这个`"<pending> Promise".then`的状态变化了
     ```js
     async middleware1(ctx, next) => {
@@ -1432,10 +1432,10 @@ app.listen('3124', () => {
         })
     }
     ```
-    之后就是打印`"second"`，然后再打印`2`, 之后设置`ctx.body`的值用于后续的网络消息返回，返回`Promise.resolve(undefined)`
-    这时还是由于这个`<pending> Promise`变成了`<fulfilled> Promise`了，所以这个`Promise`后面的`.then里面的回调`就会被加入到微任务队列中，这时微任务队列会加入一个新任务 `microTasks:\[middleware2中的.then中的回调函数，执行handleRequest函数中的handleResponse函数\]`，在执行微任务的时候会导致返回到`handleRequest函数`上下文中继续执行
-    之后继续执行微任务队列中的下一个微任务，就是继续执行`middleware2`
-    在继续执行middleware2之前我们要说一个东西，那就是在"设置`ctx.body`的值用于后续的网络消息返回和返回`Promise.resolve(undefined)`"之前还有一件事请发生，在设置`ctx`的值的时候会触发`ctx`上的属性监听器，这个东西就是`vue`中使用的`setter`
+    之后就是打印`"second"`，然后再打印`2`, 之后设置`ctx.body`的值用于后续的网络消息返回，返回`Promise.resolve(undefined)`\
+    这时还是由于这个`<pending> Promise`变成了`<fulfilled> Promise`了，所以这个`Promise`后面的`.then里面的回调`就会被加入到微任务队列中，这时微任务队列会加入一个新任务 `microTasks:\[middleware2中的.then中的回调函数，执行handleRequest函数中的handleResponse函数\]`，在执行微任务的时候会导致返回到`handleRequest函数`上下文中继续执行\
+    之后继续执行微任务队列中的下一个微任务，就是继续执行`middleware2`\
+    在继续执行middleware2之前我们要说一个东西，那就是在"设置`ctx.body`的值用于后续的网络消息返回和返回`Promise.resolve(undefined)`"之前还有一件事请发生，在设置`ctx`的值的时候会触发`ctx`上的属性监听器，这个东西就是`vue`中使用的`setter`\
     我们先看看触发`setter`之后会做什么再回到`middleware2`
     ```js
     // 下面的Delegator.prototype.setter函数是koa在初始化的时候为ctx对象上的属性添加监听器时使用的函数，这个函数为某个属性绑定setter函数
@@ -1629,7 +1629,7 @@ app.listen('3124', () => {
       this.type = 'json'
     },
     ```
-    之后`response.body`的`setter函数`中的内容就是根据不同的类型设置不同的`'Content-Type'`了，之后就`return undefined`了
+    之后`response.body`的`setter函数`中的内容就是根据不同的类型设置不同的`'Content-Type'`了，之后就`return undefined`了\
     然后我们就继续回到之前的"主线任务", 看看执行微任务队列里的"回到`middleware2`继续执行"干了什么吧
     ```js
     async middleware2(ctx, next) => {
@@ -1646,7 +1646,7 @@ app.listen('3124', () => {
         return "second"
     }
     ```
-    继续打印`"third"`,
+    继续打印`"third"`,\
     之后继续执行微任务队列中的下一个微任务，就是继续执行`handleRequest函数`
     ```js
     handleRequest(ctx, fnMiddleware) {
@@ -1805,14 +1805,14 @@ app.listen('3124', () => {
   如果你开启这个`koa2`的项目，然后你在浏览器的地址栏中键入`http://localhost:3124/`, 回车！你会发现服务端，就是我们的`koa2`项目的服务器会`log`两次`a`，两次打印的值分别为
   > 13一大长串数据42
   > 13一大长串数据4213一大长串数据42
-  什么问题导致服务器发出了两个响应呢？
+  什么问题导致服务器发出了两个响应呢？\
   想了解这个问题要知道两个东西：
   * `koa`创建的服务器不存在路由(我们之前说过的)，所以只要浏览器有请求到达服务器，都会引起服务器调用`handleRequest (req, res)`进行响应
   * 浏览器在第一次打开某个地址的时候会发起最少两个请求
-    这两个请求是![浏览器两次请求](./README_img/浏览器两次请求.png)
+    这两个请求是![浏览器两次请求](./README_img/浏览器两次请求.png)\
   所以服务器两次响应的主要原因就是浏览器两次请求！一次请求是我们在浏览器中键入的`url`，另一次请求是浏览器为了获得我们`tab`页的图标而发起的
 3. 避免浏览器的两次请求导致服务器的两次响应
-  首先要说明，不是每次刷新浏览器都会发出两次请求，也就是说浏览器不会在每次请求的时候都请求我们`tab`页的图标
+  首先要说明，不是每次刷新浏览器都会发出两次请求，也就是说浏览器不会在每次请求的时候都请求我们`tab`页的图标\
   想要避免浏览器的两次请求导致服务器的两次响应的话，可以在命令行键入`npm run start:koa2-pure`，开启纯净的`koa服务器`，这个服务器 **只能**接收http://localhost:3124/这一个请求路径
 
 # express源码分析
@@ -2272,7 +2272,7 @@ app.listen(3321, () => {
     return fn;
   }
   ```
-  执行`compileETag函数`，返回一个`函数generateETag`，这个函数由`函数createETagGenerator`创建
+  执行`compileETag函数`，返回一个`函数generateETag`，这个函数由`函数createETagGenerator`创建\
   `函数createETagGenerator`如下
   ```js
   function createETagGenerator (options) {
@@ -2339,7 +2339,7 @@ app.listen(3321, () => {
     return this;
   };
   ```
-  然后函数`this.set('etag', 'weak');`内部继续调用`this.set('etag fn', compileETag(val)); `就执行`app.settings['etag fn'] = compileETag`
+  然后函数`this.set('etag', 'weak');`内部继续调用`this.set('etag fn', compileETag(val)); `就执行`app.settings['etag fn'] = compileETag`\
   然后我们接着说执行`this.set('query parser', 'extended');`设置`url`或者请求体解析函数时具体执行的内容
   ```js
   app.set = function set(setting, val) {
@@ -2479,7 +2479,7 @@ app.listen(3321, () => {
     return this;
   };
   ```
-  `this.set('query parser', 'extended');`内会继续执行`this.set('query parser fn', compileQueryParser(val));`也就是执行`this.set('query parser fn', parseExtendedQueryString);`实际做的工作就是`app.settings['query parser fn'] = parseExtendedQueryString`
+  `this.set('query parser', 'extended');`内会继续执行`this.set('query parser fn', compileQueryParser(val));`也就是执行`this.set('query parser fn', parseExtendedQueryString);`实际做的工作就是`app.settings['query parser fn'] = parseExtendedQueryString`\
   然后我们接着说执行`this.set('trust proxy', false);`就是设置代理时具体执行的内容
   ```js
   app.set = function set(setting, val) {
@@ -2697,7 +2697,7 @@ app.listen(3321, () => {
     return this;
   };
   ```
-  进而继续执行`this.set('trust proxy fn',compileTrust(val));`就是在执行`this.set('trust proxy fn', trustNone); `实际执行的代码是`app.settings['trust proxy fn'] = trustNone`
+  进而继续执行`this.set('trust proxy fn',compileTrust(val));`就是在执行`this.set('trust proxy fn', trustNone); `实际执行的代码是`app.settings['trust proxy fn'] = trustNone`\
   不同于前两个`this.set('etag', 'weak');`和`this.set('query paser', 'extended');`，`this.set('trust proxy',false);`在执行完`this.set('trust proxy fn', trustNone);`之后还会继续执行
   ```js
   app.set = function set(setting, val) {
@@ -2750,8 +2750,8 @@ app.listen(3321, () => {
     return this;
   };
   ```
-  `Object.defineProperty`执行内容说白了就是`app.settings['@@symbol:trust_proxy_default'] = false;`
-  执行完这段代码之后`this.set('etag', 'weak');和this.set('query paser', 'extended');`和`this.set('trust proxy',false);`三个特殊的set就说完了
+  `Object.defineProperty`执行内容说白了就是`app.settings['@@symbol:trust_proxy_default'] = false;`\
+  执行完这段代码之后`this.set('etag', 'weak');和this.set('query paser', 'extended');`和`this.set('trust proxy',false);`三个特殊的set就说完了\
   接下来继续执行`app.defaultConfiguration = function defaultConfiguration()`中的内容
   ```js
   app.defaultConfiguration = function defaultConfiguration() {
@@ -2856,7 +2856,7 @@ app.listen(3321, () => {
     return app;
   }
   ```
-  然后`createApplication函数`返回`app`，至此`const app = express()`就执行完毕了
+  然后`createApplication函数`返回`app`，至此`const app = express()`就执行完毕了\
   接下来就要执行`app.use()`了
 2. `app.use()`的时候都发生了些什么呢
   首先进入`app.use()函数`内部执行，看看都发生了些什么
@@ -3166,7 +3166,7 @@ app.listen(3321, () => {
     }
   };
   ```
-  继续执行`函数app.lazyrouter = function lazyrouter()`中的内容，就要执行`this._router.use(query(this.get('query parser fn')));`了
+  继续执行`函数app.lazyrouter = function lazyrouter()`中的内容，就要执行`this._router.use(query(this.get('query parser fn')));`了\
   先执行`this.get('query parser fn')`，注意这里的`this`是`app对象`
   ```js
   methods.forEach(function(method){
@@ -3197,7 +3197,7 @@ app.listen(3321, () => {
     };
   });
   ```
-  从注释的分析中我们可以看到`this.set(path)`的返回值是`函数parseExtendedQueryString`，然后`this.get('query parser fn')`的返回值是`parseExtendedQueryString函数`
+  从注释的分析中我们可以看到`this.set(path)`的返回值是`函数parseExtendedQueryString`，然后`this.get('query parser fn')`的返回值是`parseExtendedQueryString函数`\
   之后执行`query(this.get('query parser fn'))`，就是执行`query(parseExtendedQueryString)`
   ```js
   module.exports = function query(options) {
@@ -3290,7 +3290,7 @@ app.listen(3321, () => {
     };
   };
   ```
-  `query(parseExtendedQueryString)`执行完毕返回内部创建的`query中间件函数`，然后就要执行`this._router.use(query(this.get('query parser fn')))`了，简化一下就是执行`this._router.use(query中间件函数)`
+  `query(parseExtendedQueryString)`执行完毕返回内部创建的`query中间件函数`，然后就要执行`this._router.use(query(this.get('query parser fn')))`了，简化一下就是执行`this._router.use(query中间件函数)`\
   ❕❕❕ **注意**：下面要执行的use函数和之前的`app.use = function use(fn)函数`很像，但是两个函数内部是不一样的，而且我们接下来要执行的`use方法`是在`Router`这个构造函数类上的，而之前执行的`use方法`是在`app对象`上的，注意区分他们的不同，==不要==调试的过程中突然懵了，以为是之前的`app.use(fn)`返回了
   ```js
   proto.use = function use(fn) {
@@ -3415,7 +3415,7 @@ app.listen(3321, () => {
     this.regexp.fast_slash = path === '/' && opts.end === false
   }
   ```
-  `new Layer('/', {sensitive: false, strict: false, end: false})`执行完毕返回创建的`对象layer`，这个`对象layer`携带的信息是，当用户的请求到来时，如果请求的`url`匹配上了`layer.regexp`那么就会执行`layer.handle函数`，这个`layer.handle函数`就是我们写的中间件以及`express`会前置注入的两个中间件，上面的执行过程就是`express`前置注入的`第一个中间件query函数`，根据这段表述，我们将`layer`用`regexp`，`handle`来区分这个`layer`是哪个，比如现在我们返回的`layer`是`</^\/?(?=\/|$)/i, query> layer`
+  `new Layer('/', {sensitive: false, strict: false, end: false})`执行完毕返回创建的`对象layer`，这个`对象layer`携带的信息是，当用户的请求到来时，如果请求的`url`匹配上了`layer.regexp`那么就会执行`layer.handle函数`，这个`layer.handle函数`就是我们写的中间件以及`express`会前置注入的两个中间件，上面的执行过程就是`express`前置注入的`第一个中间件query函数`，根据这段表述，我们将`layer`用`regexp`，`handle`来区分这个`layer`是哪个，比如现在我们返回的`layer`是`</^\/?(?=\/|$)/i, query> layer`\
   然后我们继续进入执行过程在`proto.use = function use(fn)函数`中把创建的对象赋值给`proto.use = function use(fn)函数`中的`layer变量`，现在就让我们回到`proto.use = function use(fn)`中继续执行
   ```js
   proto.use = function use(fn) {
@@ -3518,7 +3518,7 @@ app.listen(3321, () => {
     }
   };
   ```
-  接下来要执行`this._router.use(middleware.init(this));`了
+  接下来要执行`this._router.use(middleware.init(this));`了\
   先执行`middleware.init(this)`，简化一下就是执行`middleware.init(app)`
   ```js
   exports.init = function(app){
@@ -3537,7 +3537,7 @@ app.listen(3321, () => {
     };
   };
   ```
-  `middleware.init(app)`显然这是返回了一个函数`expressInit`，这个函数长得也很像中间件，没错！这也是个`express`内置的一个`中间件函数expressInit`
+  `middleware.init(app)`显然这是返回了一个函数`expressInit`，这个函数长得也很像中间件，没错！这也是个`express`内置的一个`中间件函数expressInit`\
   之后执行`this._router.use(middleware.init(this));`简化一下就是在执行`this._router.use(expressInit中间件函数)`，执行过程就和执行`this._router.use(query中间件函数)`的过程如出一辙
   ```js
   proto.use = function use(fn) {
@@ -3646,7 +3646,7 @@ app.listen(3321, () => {
     }
   };
   ```
-  这个`app.lazyrouter = function lazyrouter()`函数中创建了一个`router对象`，然后又创建了`</^\/?(?=\/|$)/i, query> layer`和`</^\/?(?=\/|$)/i, expressInit> layer`两个`layer`对象，然后把这两个`layer`放入到`router对象`的`stack`中了，预备以后使用
+  这个`app.lazyrouter = function lazyrouter()`函数中创建了一个`router对象`，然后又创建了`</^\/?(?=\/|$)/i, query> layer`和`</^\/?(?=\/|$)/i, expressInit> layer`两个`layer`对象，然后把这两个`layer`放入到`router对象`的`stack`中了，预备以后使用\
   接下来`app.lazyrouter = function lazyrouter()函数`就要返回了，返回到`app.use = function use(fn)`继续执行
   ```js
   app.use = function use(fn) {
@@ -3793,7 +3793,7 @@ app.listen(3321, () => {
     return this;
   };
   ```
-  上面的注释中说了，在`router.use('/', middleware0)`的执行过程中会创建一个`</^\/?(?=\/|$)/i, middleware0> layer对象`，这里一个比较有意思的东西是由于我们在我们的源代码中调用`app.use`的时候传入的待匹配的路由是`'/'`，导致`router.use('/', middleware0)`生成的`</^\/?(?=\/|$)/i, middleware0> layer对象`的`layer.regexp`和`router.use('/', query)`生成的`</^\/?(?=\/|$)/i, query> layer对象`的`layer.regexp`是一样的，所以如果我们在源代码中使用`app.use`时传入的第一个参数不是`'/'`，而是`'/user'`, 那么这里调用的就是`router.use('/user', middleware0)`了，执行过程中生成的`layer`的`regexp`就不一样了！！
+  上面的注释中说了，在`router.use('/', middleware0)`的执行过程中会创建一个`</^\/?(?=\/|$)/i, middleware0> layer对象`，这里一个比较有意思的东西是由于我们在我们的源代码中调用`app.use`的时候传入的待匹配的路由是`'/'`，导致`router.use('/', middleware0)`生成的`</^\/?(?=\/|$)/i, middleware0> layer对象`的`layer.regexp`和`router.use('/', query)`生成的`</^\/?(?=\/|$)/i, query> layer对象`的`layer.regexp`是一样的，所以如果我们在源代码中使用`app.use`时传入的第一个参数不是`'/'`，而是`'/user'`, 那么这里调用的就是`router.use('/user', middleware0)`了，执行过程中生成的`layer`的`regexp`就不一样了！！\
   执行完毕`router.use('/', middleware0)`之后就返回了，然后回到`app.use = function use(fn)`中继续执行了，然后就执行`return router.use('/', middleware0)`，然后就导致`foreach`继续执行
   ```js
   app.use = function use(fn) {
@@ -3876,7 +3876,7 @@ app.listen(3321, () => {
     </^\/?(?=\/|$)/i, middleware2> layer,
   ]这个样子
   ```
-  然后就返回了`app对象`，`app.use = function use(fn)`终于执行完毕了
+  然后就返回了`app对象`，`app.use = function use(fn)`终于执行完毕了\
   总结一下`app.use`最重要的就是创建了`router.stack这个数组`，当用户发来一个请求的时候会用到`router.stack这个数组`
 3. 我们执行`app.listen`做了什么？
   ```js
@@ -3888,7 +3888,7 @@ app.listen(3321, () => {
   ```
   app.listen就是在内部执行http.createServer(app)，之后就结束了
 4. 接下来就到了用户发请求了
-  当用户在浏览器中键入`http://localhost:3321/`的时候会向服务器发送请求，然后`var app = function(req, res, next)函数`开始执行
+  当用户在浏览器中键入`http://localhost:3321/`的时候会向服务器发送请求，然后`var app = function(req, res, next)函数`开始执行\
   这个函数是在`createApplication函数`内部创建的
   ```js
   var app = function(req, res, next) {
@@ -4009,7 +4009,7 @@ app.listen(3321, () => {
     }
   }
   ```
-  随着`done函数`的创建与被返回，`finalhandler(node的http模块提供的原生req对象, node的http模块提供的原生res对象, {env: 'development',onerror: logerror.bind(app)})`就执行结束了
+  随着`done函数`的创建与被返回，`finalhandler(node的http模块提供的原生req对象, node的http模块提供的原生res对象, {env: 'development',onerror: logerror.bind(app)})`就执行结束了\
   接下来回到`app.handle = function handle(req, res, callback)`中继续执行
   ```js
   app.handle = function handle(req, res, callback) {
@@ -4042,8 +4042,8 @@ app.listen(3321, () => {
     router.handle(req, res, done);
   };
   ```
-  接下来就开始执行`router.handle(req, res, done)`了，把调用写的更明显一些就是`router.handle(node的http模块提供的原生req对象, node的http模块提供的原生res对象, finalhandler内部创建并返回的done函数)`
-  这个函数的执行就是开始执行中间件了！！！`express`没有洋葱模型的原因就要揭开了
+  接下来就开始执行`router.handle(req, res, done)`了，把调用写的更明显一些就是`router.handle(node的http模块提供的原生req对象, node的http模块提供的原生res对象, finalhandler内部创建并返回的done函数)`\
+  这个函数的执行就是开始执行中间件了！！！`express`没有洋葱模型的原因就要揭开了\
   这是一个很长的函数，基本上执行完毕这个函数，`express`也就说完了
   ```js
   proto.handle = function handle(req, res, out) {
@@ -4874,8 +4874,8 @@ app.listen(3321, () => {
     }
   };
   ```
-  接着让我们执行`query(node的http模块创建的原生的req对象，node的http模块创建的原生的res对象，proto.handle = function handle(req, res, out)函数内部创建的next函数)`，有没有感觉到这个函数调用的方式似曾相识？
-  这不就是`koa`中的`middleware[i](ctx, dispacth.bind(null, i + 1))`的翻版吗❕❕❕❕❕❕
+  接着让我们执行`query(node的http模块创建的原生的req对象，node的http模块创建的原生的res对象，proto.handle = function handle(req, res, out)函数内部创建的next函数)`，有没有感觉到这个函数调用的方式似曾相识？\
+  这不就是`koa`中的`middleware[i](ctx, dispacth.bind(null, i + 1))`的翻版吗❕❕❕❕❕❕\
   所以说`express`的`proto.handle = function handle(req, res, out)函数内部创建的next函数`就是`koa中的dispatch函数`
   ```js
   return function query(req, res, next){
@@ -5107,7 +5107,7 @@ app.listen(3321, () => {
     });
   }
   ```
-  之后就是接着执行`self.process_params(</^\/?(?=\/|$)/i, expressInit> layer, {}, node的http模块创建的原生的req对象, node的http模块创建的原生的res对象, poke函数)函数`了
+  之后就是接着执行`self.process_params(</^\/?(?=\/|$)/i, expressInit> layer, {}, node的http模块创建的原生的req对象, node的http模块创建的原生的res对象, poke函数)函数`了\
   虽然传入`self.process_params的layer`变了，但是基本执行过程没有什么变化
   ```js
   proto.process_params = function process_params(layer, called, req, res, done) {
@@ -5244,7 +5244,7 @@ app.listen(3321, () => {
    sync = 0
   }
   ```
-  接着执行`trim_prefix(layer, layerError, layerPath, path)`，就是在执行`trim_prefix(</^\/?(?=\/|$)/i, expressInit> layer, undefined, '', '/')`
+  接着执行`trim_prefix(layer, layerError, layerPath, path)`，就是在执行`trim_prefix(</^\/?(?=\/|$)/i, expressInit> layer, undefined, '', '/')`\
   `trim_prefix`是在`proto.handle = function handle(req, res, out)函数内部`创建的
   ```js
   function trim_prefix(layer, layerError, layerPath, path) {
@@ -5367,8 +5367,8 @@ app.listen(3321, () => {
     }
   };
   ```
-  接着让我们执行`expressInit(node的http模块创建的原生的req对象，node的http模块创建的原生的res对象，proto.handle = function handle(req, res, out)函数内部创建的next函数)`，我再问一遍，有没有感觉到这个函数调用的方式似曾相识？
-  这不就是`koa`中的`middleware[i](ctx, dispacth.bind(null, i + 1))`的翻版吗❕❕❕❕❕❕
+  接着让我们执行`expressInit(node的http模块创建的原生的req对象，node的http模块创建的原生的res对象，proto.handle = function handle(req, res, out)函数内部创建的next函数)`，我再问一遍，有没有感觉到这个函数调用的方式似曾相识？\
+  这不就是`koa`中的`middleware[i](ctx, dispacth.bind(null, i + 1))`的翻版吗❕❕❕❕❕❕\
   所以再次强调`express`的`proto.handle = function handle(req, res, out)函数内部创建的next函数`就是`koa中的dispatch函数`
   ```js
   return function expressInit(req, res, next){
@@ -5403,8 +5403,8 @@ app.listen(3321, () => {
     next();
   };
   ```
-  再再再再说一遍，调用`next`就要接着执行`next函数`了，就是要执行下一个中间件了，就是等于执行`koa`中的`dispatch(i + 1)`，下一个中间件是我们自己写的`middleware0`了，终于要来了
-  我们可以看到每次`next`的之后过程中，除了`layer对象`会发生变化，因为`layer`代表的是中间件，所以每次执行`next`的时候`layer`都会变成`下一个中间件的layer`，然后`layer.handle`执行就相当于执行下一个中间件，所以以后next执行的时候我们就对里面的每个函数再做一次介绍了，就直接跳到执行我们中间件函数的部分
+  再再再再说一遍，调用`next`就要接着执行`next函数`了，就是要执行下一个中间件了，就是等于执行`koa`中的`dispatch(i + 1)`，下一个中间件是我们自己写的`middleware0`了，终于要来了\
+  我们可以看到每次`next`的之后过程中，除了`layer对象`会发生变化，因为`layer`代表的是中间件，所以每次执行`next`的时候`layer`都会变成`下一个中间件的layer`，然后`layer.handle`执行就相当于执行下一个中间件，所以以后next执行的时候我们就对里面的每个函数再做一次介绍了，就直接跳到执行我们中间件函数的部分\
   现在执行下一个`next函数`
   ```js
   function next(err) {
@@ -5630,8 +5630,8 @@ app.listen(3321, () => {
     res.send(a)
   }
   ```
-  执行 `a += 1`，
-  接着执行`next()`, 就还是在执行`proto.handle = function handle(req, res, out)`中创建的`函数next`，再说一遍这个函数就等于`koa中的dispatch(n + 1)的那个函数`
+  执行 `a += 1`，\
+  接着执行`next()`, 就还是在执行`proto.handle = function handle(req, res, out)`中创建的`函数next`，再说一遍这个函数就等于`koa中的dispatch(n + 1)的那个函数`\
   执行`next()`的时候里面的`idx`在`while`之前是`2`，在`while`之后会变成`3`；还有`sync`会变成`3`，然后就是执行`self.process_params`，`poke`，`trim_prefix`，`Layer.prototype.handle_request = function handle(req, res, next)`四个函数，我们还是跳过这三个函数，因为这三个函数的执行过程除了`layer对象`变了，其他的都没变，再执行我们的中间件`middleware1`
   ```js
   async function middleware1(req, res, next) {
@@ -5641,8 +5641,8 @@ app.listen(3321, () => {
     a += 4;
   },
   ```
-  执行 `a += 3`
-  接着执行`next()`, 就还是在执行`proto.handle = function handle(req, res, out)`中创建的`函数next`，再说一遍这个函数就等于`koa中的dispatch(n + 1)`函数
+  执行 `a += 3`\
+  接着执行`next()`, 就还是在执行`proto.handle = function handle(req, res, out)`中创建的`函数next`，再说一遍这个函数就等于`koa中的dispatch(n + 1)`函数\
   执行`next()`的时候里面的`idx`在`while之前`是`3`，在`while之后`会变成`4`；还有`sync`会变成`4`，然后就是执行`self.process_params`，`poke`，`trim_prefix`，`Layer.prototype.handle_request = function handle(req, res, next)`四个函数，我们还是跳过这三个函数，因为这三个函数的执行过程除了`layer对象`变了，其他的都没变，再执行我们的`中间件middleware2`
   ```js
   async function middleware2(req, res, next) {
@@ -5651,8 +5651,8 @@ app.listen(3321, () => {
     return 1
   }
   ```
-  执行`axios.get("http://localhost:3222/");`这个函数会发出一个网络请求，然后立即返回一个`<pending:aixos> Promise`，然后就会触发`await关键字`了，因为`await`的特性是会把后面紧跟的函数执行到有返回值返回，然后`await`把这个返回值包装成`Promise`(如果返回的本身就是`Promise`，那么就不进行包装了)，然后返回把这个包装好的`Promise的.then创建的Promise`返回，这些我们之前都讲过。所以这里`await`会让`middleware2函数`返回`<pending:aixos.then> Promise`。
-  这个时候就来到了洋葱模型了！！！`middleware2`这个函数会把返回值返回到哪里？返回到`Layer.prototype.handle_request = function handle(req, res, next)`这个函数，虽然我们后来没有显示这个函数的执行过程了，但是这个函数是真实执行的，只不过因为啰嗦我们就没有继续展示了，这个`Layer.prototype.handle_request = function handle(req, res, next)函数`会返回什么呢？
+  执行`axios.get("http://localhost:3222/");`这个函数会发出一个网络请求，然后立即返回一个`<pending:aixos> Promise`，然后就会触发`await关键字`了，因为`await`的特性是会把后面紧跟的函数执行到有返回值返回，然后`await`把这个返回值包装成`Promise`(如果返回的本身就是`Promise`，那么就不进行包装了)，然后返回把这个包装好的`Promise的.then创建的Promise`返回，这些我们之前都讲过。所以这里`await`会让`middleware2函数`返回`<pending:aixos.then> Promise`。\
+  这个时候就来到了洋葱模型了！！！`middleware2`这个函数会把返回值返回到哪里？返回到`Layer.prototype.handle_request = function handle(req, res, next)`这个函数，虽然我们后来没有显示这个函数的执行过程了，但是这个函数是真实执行的，只不过因为啰嗦我们就没有继续展示了，这个`Layer.prototype.handle_request = function handle(req, res, next)函数`会返回什么呢？\
   可能大家已经忘了，之前我们说过`Layer.prototype.handle_request = function handle(req, res, next)这个函数`的返回值的，那让我们再看看这个函数吧
   ```js
   Layer.prototype.handle_request = function handle(req, res, next) {
@@ -5675,7 +5675,7 @@ app.listen(3321, () => {
     }
   };
   ```
-  从上面的注释中可以看到，`express`没有把`fn(req, res, next)`也就是`middleware2(req, res, next)的返回值`再作为`Layer.prototype.handle_request = function handle(req, res, next)这个函数的返回值`返回出去，那么这个时候`Layer.prototype.handle_request = function handle(req, res, next)的返回值`就是`undefined`了！！！
+  从上面的注释中可以看到，`express`没有把`fn(req, res, next)`也就是`middleware2(req, res, next)的返回值`再作为`Layer.prototype.handle_request = function handle(req, res, next)这个函数的返回值`返回出去，那么这个时候`Layer.prototype.handle_request = function handle(req, res, next)的返回值`就是`undefined`了！！！\
   之后就要返回到`trim_prefix函数`中执行，这个函数又返回什么呢？
   ```js
   function trim_prefix(layer, layerError, layerPath, path) {
@@ -5769,9 +5769,9 @@ app.listen(3321, () => {
     });
   }
   ```
-  在`next函数`中`self.process_params函数`已经返回了，返回值是`undefined`，但是`next`并没有利用这个返回值，其实就算`express`用一个`undefined`作为返回值也没有用
-  然后`next`继续执行后面就没有代码了，`next`就要返回`undefined`了
-  所以`middleware1函数`中`next函数`的返回值是什么？是`undefined`，根本没有和`middleware2函数的返回值`建立起来联系
+  在`next函数`中`self.process_params函数`已经返回了，返回值是`undefined`，但是`next`并没有利用这个返回值，其实就算`express`用一个`undefined`作为返回值也没有用\
+  然后`next`继续执行后面就没有代码了，`next`就要返回`undefined`了\
+  所以`middleware1函数`中`next函数`的返回值是什么？是`undefined`，根本没有和`middleware2函数的返回值`建立起来联系\
   当`next函数`返回的时候`middleware1函数`就要继续执行了
   ```js
   async function middleware1(req, res, next) {
@@ -5790,8 +5790,8 @@ app.listen(3321, () => {
     a += 4;
   },
   ```
-  由于`await`会触发`middleware1函数`进行返回，返回值是什么？是`<fulfilled.then> Promise`，因为`await`后面跟的是`undefined`，所以`await`会对`undefined`这个值进行包装，包装的结果就是`Promise.resolve(undefined)`, 这个`Promise的状态`是`fulfilled`，然后`await`会把`这个Promise调用.then创建的Promise`返回出去，所以返回值就是`<fulfilled.then> Promise`
-  由于产生了一个`fulfilled的Promise`，所以事件循环线程会把`这个Promise的.then中的回调函数`放入微任务队列中`microTasks:[回到middleware1的await之后继续执行]`
+  由于`await`会触发`middleware1函数`进行返回，返回值是什么？是`<fulfilled.then> Promise`，因为`await`后面跟的是`undefined`，所以`await`会对`undefined`这个值进行包装，包装的结果就是`Promise.resolve(undefined)`, 这个`Promise的状态`是`fulfilled`，然后`await`会把`这个Promise调用.then创建的Promise`返回出去，所以返回值就是`<fulfilled.then> Promise`\
+  由于产生了一个`fulfilled的Promise`，所以事件循环线程会把`这个Promise的.then中的回调函数`放入微任务队列中`microTasks:[回到middleware1的await之后继续执行]`\
   然后`middleware1`就彻底返回了，`middleware1`返回的过程和`middleware2`中的过程一致，就是`Layer.prototype.handle_request = function handle(req, res, next) -> trim_prefix -> poke -> self.process_params`, 最终返回`undefined`到`middleware0`中
   ```js
   async function middleware0(req, res, next) {
@@ -5801,8 +5801,8 @@ app.listen(3321, () => {
     res.send(a)
   }
   ```
-  由于`await`会触发`middleware0函数`进行返回，返回值是什么？是`<fulfilled.then> Promise`，因为`await`后面跟的是`undefined`，所以`await`会对`undefined`这个值进行包装，包装的结果就是`Promise.resolve(undefined)`, 这个`Promise的状态是fulfilled`，然后`await`会把`这个Promise调用.then创建的Promise`返回出去，所以返回值就是`<fulfilled.then> Promise`
-  由于产生了一个`fulfilled的Promise`，所以事件循环线程会把`这个Promise的.then中的回调函数`放入微任务队列中`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`
+  由于`await`会触发`middleware0函数`进行返回，返回值是什么？是`<fulfilled.then> Promise`，因为`await`后面跟的是`undefined`，所以`await`会对`undefined`这个值进行包装，包装的结果就是`Promise.resolve(undefined)`, 这个`Promise的状态是fulfilled`，然后`await`会把`这个Promise调用.then创建的Promise`返回出去，所以返回值就是`<fulfilled.then> Promise`\
+  由于产生了一个`fulfilled的Promise`，所以事件循环线程会把`这个Promise的.then中的回调函数`放入微任务队列中`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`\
   然后`middleware0`就彻底返回了，`middleware0`返回的过程和`middleware1`和`middleware1`的返回过程一致，就是`Layer.prototype.handle_request = function handle(req, res, next) -> trim_prefix -> poke -> self.process_params`, 最终返回`undefined`到`expressInit`这个`express的第二个前置中间件`中
   ```js
   return function expressInit(req, res, next){
@@ -5820,7 +5820,7 @@ app.listen(3321, () => {
     /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */next();
   };
   ```
-  注意`expressInit`不是一个`async函数`，`expressInit`返回的值是`undefined`而不是`Promise.resolve(undefined)`
+  注意`expressInit`不是一个`async函数`，`expressInit`返回的值是`undefined`而不是`Promise.resolve(undefined)`\
   然后就是接着执行`Layer.prototype.handle_request = function handle(req, res, next) -> trim_prefix -> poke -> self.process_params`的返回过程，最终返回`undefined`到`query`这个`express`的第一个前置中间件中
   ```js
   return function query(req, res, next){
@@ -5832,7 +5832,7 @@ app.listen(3321, () => {
     /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */next();
   };
   ```
-  注意`query`也不是一个`async函数`，`query`返回的值是`undefined`而不是`Promise.resolve(undefined)`
+  注意`query`也不是一个`async函数`，`query`返回的值是`undefined`而不是`Promise.resolve(undefined)`\
   然后就会到了第一次调用`next()`, 这次调用是`express`自动调用的，在函数
   ```js
   proto.handle = function handle(req, res, out) {
@@ -5884,9 +5884,9 @@ app.listen(3321, () => {
     /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */ app.handle(req, res, next);
   };
   ```
-  `app.handle(req, res, next);`返回之后，`app函数`的执行就结束了，这次请求的回调函数的执行就结束了，但是这次请求并没有结束！！！
-  现在事件循环线程中的代码执行完毕了，要开始执行微任务队列中的代码了
-  让我们看看微任务队列中有什么东西吧，`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`
+  `app.handle(req, res, next);`返回之后，`app函数`的执行就结束了，这次请求的回调函数的执行就结束了，但是这次请求并没有结束！！！\
+  现在事件循环线程中的代码执行完毕了，要开始执行微任务队列中的代码了\
+  让我们看看微任务队列中有什么东西吧，`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`\
   先让我们执行“回到`middleware1`的`await`之后继续执行”的回调任务，也叫微任务
   ```js
   async function middleware1(req, res, next) {
@@ -5896,8 +5896,8 @@ app.listen(3321, () => {
     a += 4;
   },
   ```
-  由于把“回到`middleware1`的`await`之后继续执行”这个任务添加到微任务队列中的`Promise`是`Promise.reslove(undefined)`创建的，所以`await next()`的返回值也就是`b`的值就是`undefined`了！
-  执行打印`'b' undefined`，接着执行 `a += 4`
+  由于把“回到`middleware1`的`await`之后继续执行”这个任务添加到微任务队列中的`Promise`是`Promise.reslove(undefined)`创建的，所以`await next()`的返回值也就是`b`的值就是`undefined`了！\
+  执行打印`'b' undefined`，接着执行 `a += 4`\
   然后从微任务队列中找到下一个微任务——“回到`middleware0`的`await`之后继续执行”开始执行
   ```js
   async function middleware0(req, res, next) {
@@ -5907,9 +5907,9 @@ app.listen(3321, () => {
     res.send(a)
   },
   ```
-  由于把“回到`middleware0`的`await`之后继续执行”这个任务添加到微任务队列中的`Promise`是`Promise.reslove(undefined)`创建的，所以`await next()`的返回值就是`undefined`了！
-  执行打印`await next()`的返回值，也就是打印`undefined`，接着执行 `a += 2`
-  然后执行`res.send(a)`这段代码，这段代码执行会执行`send函数`，注意`send函数`不是`node的http模块的res原生对象`上自身就携带的，而是`express`通过`express`的`第二个前置中间件expressInit`加上去的，怎么加上去的呢？是通过原型链，在`expressInit`中使用`setPrototypeOf(res, app.response)`，让`res.__proto__ === app.response`, 所以`send`方法是`app.response`对象上的方法，所以在使用`res.send(a)`的时候其实是在使用`res.__proto__.send(a)`
+  由于把“回到`middleware0`的`await`之后继续执行”这个任务添加到微任务队列中的`Promise`是`Promise.reslove(undefined)`创建的，所以`await next()`的返回值就是`undefined`了！\
+  执行打印`await next()`的返回值，也就是打印`undefined`，接着执行 `a += 2`\
+  然后执行`res.send(a)`这段代码，这段代码执行会执行`send函数`，注意`send函数`不是`node的http模块的res原生对象`上自身就携带的，而是`express`通过`express`的`第二个前置中间件expressInit`加上去的，怎么加上去的呢？是通过原型链，在`expressInit`中使用`setPrototypeOf(res, app.response)`，让`res.__proto__ === app.response`, 所以`send`方法是`app.response`对象上的方法，所以在使用`res.send(a)`的时候其实是在使用`res.__proto__.send(a)`\
   实际上执行的内容是
   ```js
   res.send = function send(body) {
@@ -7651,16 +7651,15 @@ app.listen(3321, () => {
     /** ⭕️⭕️⭕️⭕️⭕️⭕️⭕️ 执行到这里了 */
   },
   ```
-  再往下执行`middleware0`就要返回了，实际上说是微任务中的一个注册的回调函数“回到`middleware0`的`await`之后继续执行”执行完毕了, 返回值是`Promise.resolve(undefined)`，由于把“回到`middleware0`的`await`之后继续执行”这个函数加入到微任务队列中的`Promise`的后面没有调用`.then`也没有使用`await`等待这个`Promise`，所以不会有微任务加入微任务队列
-  至此微任务队列就空了，这次请求的响应彻底结束了！！！
-
-  等等？？？？
-  有没有觉得奇怪之前在`middleware2`中`调用的axios形成的<pending:aixos> Promise`去哪里了？？
-  在解析这个`Promise`去哪里了之前我们还是要先深度解析一下`axios`干了什么！
-  首先调用`axios`的时候，`axios`会使用`node的http模块`的功能，向某个地址发起请求，`http模块`会使用中断调用操作系统的能力，操作系统会把这个请求内容写入到内存中代表网卡的地址中，然后操作系统把执行权力交还给`http模块`，然后`http模块`就返回了一个`<pending:aixos> Promise`之后事件循环线程继续做自己的事情，同时网络请求的工作就交给网卡去做了，网卡会检测到有数据发送到了自己检测的内存中，网卡就使用这个数据去发起网络请求并获取数据，等拿到了响应之后，网卡会给操作系统发起一个中断，告诉操作系统网络数据到了，操作系统会根据自己的调度机制决定是继续执行我们事件循环线程还是转而去处理网卡的中断
-  我们都知道在网卡拿到响应数据触发硬件中断之前，`<pending:aixos> Promise`不会变成`<fulfilled:aixos> Promise`的。然而就算网卡拿到响应数据触发硬件中断操作系统也处理了这个中断，`<pending:aixos> Promise`也不会变成`<fulfilled:aixos> Promise`，为什么？？这件事情是`libuv`决定的，也就是由`node的事件循环模型`和`node的网络处理模型`决定的，node在没有“其他任务”要处理的时候会在网络请求的队列里面等待网络请求的到来，怎么等待？？通过`epoll`，`node`会在执行完一次事件循环的时候通过`epoll`来等待文件描述符变成可读状态，所以在`node`重新执行`epoll`之前是不会知道网卡和操作系统已经把请求数据准备好了的，那这个“`node`重新执行`epoll`之前”都包括哪些部分呢？1. 回调函数的主线代码执行，比如：上一次`epoll`读取到的到来的网络请求 触发的回调函数，2. 执行回调函数时 状态明确为`fulfilled的Promise的then中的回调函数`。
-  这地方等我读读`node`的源码在做解释吧，就是`node`中的`Promise`到底是如何实现的，`node`中到底存不存在微任务(应该是不存在)
-  根据上面的描述，就算网卡拿到响应数据触发硬件中断操作系统也处理了这个中断，`<pending:aixos> Promise`也不会变成`<fulfilled:aixos> Promise`，而是必须要等到事件循环中的主线任务执行完毕，然后微任务队列中的回调函数都执行一遍之后(在我们里例子里就是`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`中的任务执行完毕)，才能调用epoll获取这个早就得到的网络数据，然后把`<pending:aixos> Promise`变成`<fulfilled:aixos> Promise`，把`<fulfilled:aixos.then> Promise`中的回调函数加入到微任务队列中执行。当然也有可能这个网络数据会在`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`中的任务执行完毕之后才获取到，不过不管网络数据获取到的时间是什么，`<fulfilled:aixos.then> Promise`中的回调函数总会是最后执行的
+  再往下执行`middleware0`就要返回了，实际上说是微任务中的一个注册的回调函数“回到`middleware0`的`await`之后继续执行”执行完毕了, 返回值是`Promise.resolve(undefined)`，由于把“回到`middleware0`的`await`之后继续执行”这个函数加入到微任务队列中的`Promise`的后面没有调用`.then`也没有使用`await`等待这个`Promise`，所以不会有微任务加入微任务队列\
+  至此微任务队列就空了，这次请求的响应彻底结束了！！！\
+  等等？？？？\
+  有没有觉得奇怪之前在`middleware2`中`调用的axios形成的<pending:aixos> Promise`去哪里了？？\
+  在解析这个`Promise`去哪里了之前我们还是要先深度解析一下`axios`干了什么！\
+  首先调用`axios`的时候，`axios`会使用`node的http模块`的功能，向某个地址发起请求，`http模块`会使用中断调用操作系统的能力，操作系统会把这个请求内容写入到内存中代表网卡的地址中，然后操作系统把执行权力交还给`http模块`，然后`http模块`就返回了一个`<pending:aixos> Promise`之后事件循环线程继续做自己的事情，同时网络请求的工作就交给网卡去做了，网卡会检测到有数据发送到了自己检测的内存中，网卡就使用这个数据去发起网络请求并获取数据，等拿到了响应之后，网卡会给操作系统发起一个中断，告诉操作系统网络数据到了，操作系统会根据自己的调度机制决定是继续执行我们事件循环线程还是转而去处理网卡的中断\
+  我们都知道在网卡拿到响应数据触发硬件中断之前，`<pending:aixos> Promise`不会变成`<fulfilled:aixos> Promise`的。然而就算网卡拿到响应数据触发硬件中断操作系统也处理了这个中断，`<pending:aixos> Promise`也不会变成`<fulfilled:aixos> Promise`，为什么？？这件事情是`libuv`决定的，也就是由`node的事件循环模型`和`node的网络处理模型`决定的，node在没有“其他任务”要处理的时候会在网络请求的队列里面等待网络请求的到来，怎么等待？？通过`epoll`，`node`会在执行完一次事件循环的时候通过`epoll`来等待文件描述符变成可读状态，所以在`node`重新执行`epoll`之前是不会知道网卡和操作系统已经把请求数据准备好了的，那这个“`node`重新执行`epoll`之前”都包括哪些部分呢？1. 回调函数的主线代码执行，比如：上一次`epoll`读取到的到来的网络请求 触发的回调函数，2. 执行回调函数时 状态明确为`fulfilled的Promise的then中的回调函数`。\
+  这地方等我读读`node`的源码在做解释吧，就是`node`中的`Promise`到底是如何实现的，`node`中到底存不存在微任务(应该是不存在)\
+  根据上面的描述，就算网卡拿到响应数据触发硬件中断操作系统也处理了这个中断，`<pending:aixos> Promise`也不会变成`<fulfilled:aixos> Promise`，而是必须要等到事件循环中的主线任务执行完毕，然后微任务队列中的回调函数都执行一遍之后(在我们里例子里就是`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`中的任务执行完毕)，才能调用epoll获取这个早就得到的网络数据，然后把`<pending:aixos> Promise`变成`<fulfilled:aixos> Promise`，把`<fulfilled:aixos.then> Promise`中的回调函数加入到微任务队列中执行。当然也有可能这个网络数据会在`microTasks:[回到middleware1的await之后继续执行，回到middleware0的await之后继续执行]`中的任务执行完毕之后才获取到，不过不管网络数据获取到的时间是什么，`<fulfilled:aixos.then> Promise`中的回调函数总会是最后执行的\
   接下来就是要执行`<fulfilled:aixos.then> Promise`中的回调函数了！！！
   ```js
   async function middleware2(req, res, next) {
@@ -7671,12 +7670,11 @@ app.listen(3321, () => {
     return 1
   }
   ```
-  在`res.send(‘1342’)`执行完毕之后，才会执行`a += data.data;`至此这次请求才算处理完成
-  等等！！
-  你测试的时候会不会发现了和之前调用`npm run start:koa2`同样的问题，那就是客户端发来的两个请求，所以如果你想正常调试还是请使用`npm run start:express-pure`，这个是纯净版的`npm run start:express`
-  如果你改用了`npm run start:express-pure`的话，到这里的执行内容才算是真正的彻底结束，否则你要是使用`npm run start:express`就会多一次请求到服务器，服务器会再走一遍上面的流程在彻底结束！！
-
-  说了这么多，我们好像偏离了主题，那就是`express`为什么没有实现洋葱模型呢？？其实，`express`是有洋葱模型的，因为函数调用栈会有深度优先的属性，这种属性就是洋葱模型呀
+  在`res.send(‘1342’)`执行完毕之后，才会执行`a += data.data;`至此这次请求才算处理完成\
+  等等！！\
+  你测试的时候会不会发现了和之前调用`npm run start:koa2`同样的问题，那就是客户端发来的两个请求，所以如果你想正常调试还是请使用`npm run start:express-pure`，这个是纯净版的`npm run start:express`\
+  如果你改用了`npm run start:express-pure`的话，到这里的执行内容才算是真正的彻底结束，否则你要是使用`npm run start:express`就会多一次请求到服务器，服务器会再走一遍上面的流程在彻底结束！！\
+  说了这么多，我们好像偏离了主题，那就是`express`为什么没有实现洋葱模型呢？？其实，`express`是有洋葱模型的，因为函数调用栈会有深度优先的属性，这种属性就是洋葱模型呀\
   看下面的函数
   ```js
   function foo() {
@@ -7688,17 +7686,15 @@ app.listen(3321, () => {
       console.log('foo:end');
   }
   ```
-  `foo这个函数`的执行结果就是个洋葱模型呀
-
-  说`express`没有洋葱模型的要看你怎么定义洋葱模型，因为`express`不能`await 网络请求`的原因所以大家说`express`没有洋葱模型，就像我们的例子里面描述的那样，我们要是实现`express2koa`就是要`express`支持`koa`那样的能等待网络请求的洋葱模型
-  那怎么实现呢？
-  首先我们之前说过，能等待网络请求不是说要求把中间件的返回值使用`Promise`包裹一下，使用`Promise`包裹中间的返回值和能等待网络请求没有必然联系，因为`await`的返回值一定是一个`Promise`，你用`Promise`包裹就没有意义了
-  那关键是什么呢？
-  是返回中间件的返回值！！！我们之前强调过很多次，`express`中的很多函数没有把中间件的执行结果返回，而是直接返回`undefined`！！！
+  `foo这个函数`的执行结果就是个洋葱模型呀\
+  说`express`没有洋葱模型的要看你怎么定义洋葱模型，因为`express`不能`await 网络请求`的原因所以大家说`express`没有洋葱模型，就像我们的例子里面描述的那样，我们要是实现`express2koa`就是要`express`支持`koa`那样的能等待网络请求的洋葱模型\
+  那怎么实现呢？\
+  首先我们之前说过，能等待网络请求不是说要求把中间件的返回值使用`Promise`包裹一下，使用`Promise`包裹中间的返回值和能等待网络请求没有必然联系，因为`await`的返回值一定是一个`Promise`，你用`Promise`包裹就没有意义了\
+  那关键是什么呢？\
+  是返回中间件的返回值！！！我们之前强调过很多次，`express`中的很多函数没有把中间件的执行结果返回，而是直接返回`undefined`！！！\
   所以实现`express2koa`的关键点在于让`express`返回中间件执行的结果，那么接下来我们就开始见`express2koa`的内容
-
 # express2koa
-就像前面说的那么简单只要在下面的几个地方添加`return`就可以实现简单的`express2koa`了
+就像前面说的那么简单只要在下面的几个地方添加`return`就可以实现简单的`express2koa`了\
 为`proto.handle = function handle(req, res, out)`中创建的`next函数`和`trim_prefix函数`添加返回值
 ```js
 proto.handle = function handle(req, res, out) {
@@ -7941,12 +7937,11 @@ Layer.prototype.handle_request = function handle(req, res, next) {
 
 };
 ```
-就只要改变上面的内容就能实现`express2koa`了！！！
-改了这些`return`到底发生了什么呢？我们来解释一下
-
-但是我要说的不止这些，这个时候我们还有个疑惑要解决：为什么`koa`在`dispatch`中调用中间件的时候要在中间件的返回值上包裹一层`Promise.resolve()`之后在返回中间件的值呢？
-这里要说到`express`和`koa`的另一个区别了
-之前我们分析`express`和`koa`的源码的时候还分析了`express`和`koa`是如何把数据响应给请求方的吧，虽然底层都是调用`res.end()`，但是`express`和`koa`的调用时机不同！
+就只要改变上面的内容就能实现`express2koa`了！！！\
+改了这些`return`到底发生了什么呢？我们来解释一下\
+但是我要说的不止这些，这个时候我们还有个疑惑要解决：为什么`koa`在`dispatch`中调用中间件的时候要在中间件的返回值上包裹一层`Promise.resolve()`之后在返回中间件的值呢？\
+这里要说到`express`和`koa`的另一个区别了\
+之前我们分析`express`和`koa`的源码的时候还分析了`express`和`koa`是如何把数据响应给请求方的吧，虽然底层都是调用`res.end()`，但是`express`和`koa`的调用时机不同！\
 对于`express`来说，只要我们程序员调用了`res.send()`，`express`就会直接调用`res.end()`来响应内容，不管后面还有没有中间件执行，比如我们写下面的一个`express服务器`
 ```js
 const axios = require('axios')
@@ -7980,17 +7975,14 @@ app.listen(3321, () => {
   console.log("run in 3321");
 });
 ```
-对于上面我们写的`express服务器`，在`中间件middleware0`和`中间件middleware2`中我们都调用了`res.send(a)`，会发生什么呢？
-我们之前分析过，`middleware2`中的`await axios()`之后的代码会落后于`middleware0`中的`await next()`之后的代码执行，也就是说`middleware0`中的`res.send(a)`会先执行，我们之前也分析过`res.send(a)`执行的时候会立即调用`res.end(a)[注：res.end() === (res.write() + res.close())]`，此时的`a === ‘1342’`，调用`res.end(‘1342’)`会立即给客户端响应，然后关闭本次响应(注意：本次客户端的连接是`keep-alive`的，所以底层的`tcp连接`不会因为`res.close()`而断开)，再之后才会执行`middleware2`中的`await axios()`之后的代码，就会再次执行`res.send(a)[res.send('1342一大长串数据')]`，本质还是调用`res.end`，由于这次响应在上一次`res.end(‘1342’)`就已经关闭了，再次调用`res.end`就会报错！
-
-如果我们把上面的代码用在`express2koa服务器`上，也还是有问题的，就算`express2koa`解决了洋葱模型，但是`express2koa`并没有解决`res.send`调用时内部就会调用`res.end`的问题
-对于`express2koa服务器`，上面的代码中`middleware2`中的`await axios()`之后的代码会先于`middleware0`中的`await next()`之后的代码执行，也就是说`middleware2`中的`res.send(a)`会先执行，就是执行`res.end('13一大长串数据')`, 然后关闭本次响应，再之后才会执行`middleware0`中的`res.send(a)`, 由于本次响应已经关闭了，所以还是会导致报错
-
-不论是在`express项目`中还是在`express2koa项目`中调用上面的代码都会导致报错的根本原因在于调用`res.send`的内部会立即调用`res.end`，所以调用两次`res.send`就相当于调用两次`res.end`，由于第一次调用`res.end`的时候已经把响应对象关闭了，那么第二次调用`res.end`就会报错了
-
-那么接下来让我们看看koa的行为就能知道为什么"`koa`在`dispatch`中调用中间件的时候要在中间件的返回值上包裹一层`Promise.resolve()`之后在返回中间件的值"了
-对于`koa`来说，不论我们程序员把`ctx.body`在所有的中间件调用几次，都不会立即触发`res.end`，`koa`触发`res.end`的时机是在所有的中间件以及中间件中的微任务执行完毕之后
-大家还记得这个代码吗？`fnMiddleware(ctx).then(handleResponse).catch(onerror);`
+对于上面我们写的`express服务器`，在`中间件middleware0`和`中间件middleware2`中我们都调用了`res.send(a)`，会发生什么呢？\
+我们之前分析过，`middleware2`中的`await axios()`之后的代码会落后于`middleware0`中的`await next()`之后的代码执行，也就是说`middleware0`中的`res.send(a)`会先执行，我们之前也分析过`res.send(a)`执行的时候会立即调用`res.end(a)[注：res.end() === (res.write() + res.close())]`，此时的`a === ‘1342’`，调用`res.end(‘1342’)`会立即给客户端响应，然后关闭本次响应(注意：本次客户端的连接是`keep-alive`的，所以底层的`tcp连接`不会因为`res.close()`而断开)，再之后才会执行`middleware2`中的`await axios()`之后的代码，就会再次执行`res.send(a)[res.send('1342一大长串数据')]`，本质还是调用`res.end`，由于这次响应在上一次`res.end(‘1342’)`就已经关闭了，再次调用`res.end`就会报错！\
+如果我们把上面的代码用在`express2koa服务器`上，也还是有问题的，就算`express2koa`解决了洋葱模型，但是`express2koa`并没有解决`res.send`调用时内部就会调用`res.end`的问题\
+对于`express2koa服务器`，上面的代码中`middleware2`中的`await axios()`之后的代码会先于`middleware0`中的`await next()`之后的代码执行，也就是说`middleware2`中的`res.send(a)`会先执行，就是执行`res.end('13一大长串数据')`, 然后关闭本次响应，再之后才会执行`middleware0`中的`res.send(a)`, 由于本次响应已经关闭了，所以还是会导致报错\
+不论是在`express项目`中还是在`express2koa项目`中调用上面的代码都会导致报错的根本原因在于调用`res.send`的内部会立即调用`res.end`，所以调用两次`res.send`就相当于调用两次`res.end`，由于第一次调用`res.end`的时候已经把响应对象关闭了，那么第二次调用`res.end`就会报错了\
+那么接下来让我们看看koa的行为就能知道为什么"`koa`在`dispatch`中调用中间件的时候要在中间件的返回值上包裹一层`Promise.resolve()`之后在返回中间件的值"了\
+对于`koa`来说，不论我们程序员把`ctx.body`在所有的中间件调用几次，都不会立即触发`res.end`，`koa`触发`res.end`的时机是在所有的中间件以及中间件中的微任务执行完毕之后\
+大家还记得这个代码吗？`fnMiddleware(ctx).then(handleResponse).catch(onerror);`\
 `fnMiddleware(ctx)`的返回值就是`dispatch(0)`的执行结果，而`dispatch(0)`的执行结果就是`Promise.resolve(我们写的第一个中间件执行结果)`，由于洋葱模型的效应，只要你写的中间件是正常的——即每个中间件都是`async函数`，`next()`都是时候`await`调用的，形如：
 ```js
 app.use(async (ctx, next) => {
@@ -7999,7 +7991,7 @@ app.use(async (ctx, next) => {
   /** ... */
 })
 ```
-在洋葱模型下，就会让fnMiddleware(ctx)返回的Promise对象的.then中的回调函数(handleResponse)在所有我们写的中间件执行完毕之后再执行。res.end是在handleResponse中执行的，也就是说res.end会延迟到最后执行，这样就导致了——不论我们程序员把ctx.body在所有的中间件调用几次都不会报错了。这也是koa洋葱模型的最后一块拼图，如果网上大家说的洋葱模型考虑到了这一点，所以说koa的洋葱模型是依靠Promise.reslove实现的那么我是同意的
+在洋葱模型下，就会让fnMiddleware(ctx)返回的Promise对象的.then中的回调函数(handleResponse)在所有我们写的中间件执行完毕之后再执行。res.end是在handleResponse中执行的，也就是说res.end会延迟到最后执行，这样就导致了——不论我们程序员把ctx.body在所有的中间件调用几次都不会报错了。这也是koa洋葱模型的最后一块拼图，如果网上大家说的洋葱模型考虑到了这一点，所以说koa的洋葱模型是依靠Promise.reslove实现的那么我是同意的\
 照例我们还是看看在koa项目中调用两次ctx.body的例子吧
 ```js
 const Koa = require('koa')
@@ -8049,14 +8041,12 @@ app.listen('3124', () => {
     console.log('run in 3124');
 })
 ```
-可以看到我们在`middleware3`和`middleware1`中都调用了`ctx.body`，启动这个`koa服务器`，首先会执行`middleware3`中的`ctx.body`，然后触发`ctx对象`上`body属性`的`setter`，然后设置一些值，然后会执行`middleware1`中的`ctx.body`，然后又一次触发`ctx对象`上`body属性`的`setter`，两次触发`ctx对象`上`body属性`的`setter`都没有直接执行`res.end`所以不会关闭`响应对象res`，然后等`middleware1`的`await`后面的回调函数执行完毕之后，`handleResponse函数`也就执行了，这个时候才触发`res.end`，所以在`koa`中`ctx.body`可以任意设置多次，会以执行顺序(洋葱模型)上最后一次的执行为最后的值
-
-至此这个项目就彻底讲完了！！！
-
-但是还有一个插曲，还记得之前说的要补充“`globalThis`，`global`，`process`的关系”这件事吗
-`globalThis`在不同的环境会有不同的值
-浏览器环境       `globalThis === window`
-`node`环境        `globalThis === global`(`node`的全局对象)
-`webworker`环境   `globalThis === self`
-在`node`环境中
+可以看到我们在`middleware3`和`middleware1`中都调用了`ctx.body`，启动这个`koa服务器`，首先会执行`middleware3`中的`ctx.body`，然后触发`ctx对象`上\`body属性`的`setter`，然后设置一些值，然后会执行`middleware1`中的`ctx.body`，然后又一次触发`ctx对象`上`body属性`的`setter`，两次触发`ctx对象`上`body属性`的`setter`都没有直接执行`res.end`所以不会关闭`响应对象res`，然后等`middleware1`的`await`后面的回调函数执行完毕之后，`handleResponse函数`也就执行了，这个时候才触发`res.end`，所以在`koa`中`ctx.body`可以任意设置多次，会以执行顺序(洋葱模型)上最后一次的执行为最后的值
+至此这个项目就彻底讲完了！！！\
+但是还有一个插曲，还记得之前说的要补充“`globalThis`，`global`，`process`的关系”这件事吗\
+`globalThis`在不同的环境会有不同的值\
+浏览器环境&#9;&#9;&#9;`globalThis === window`\
+`node`环境&#9;&#9;&#9;`globalThis === global`(`node`的全局对象)\
+`webworker`环境&#9;&#9;&#9;`globalThis === self`\
+在`node`环境中\
 `process`是`global`中的一个不可枚举的对象，`global对象`上面拥有着`node`环境中所有的对象
